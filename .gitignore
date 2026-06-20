@@ -21,3 +21,4 @@ dist/
 backend/.cache/
 *.log
 .DS_Store
+.vscode
