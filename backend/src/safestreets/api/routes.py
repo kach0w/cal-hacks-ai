@@ -15,7 +15,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from safestreets.api.schemas import AnalyzeRequest, SubmitRequest
 from safestreets.lastmile import coalition
-from safestreets.orchestrator.dispatch import run_pipeline
+from safestreets.models.intersection import ImageRef, Intersection
+from safestreets.orchestrator import coordinator
+from safestreets.orchestrator.dispatch import gather_data, run_pipeline
 from safestreets.store import cache, keys
 
 router = APIRouter()
@@ -35,9 +37,27 @@ async def analyze_stream(lat: float, lng: float, city: str | None = None):
 
 @router.post("/analyze")
 async def analyze(req: AnalyzeRequest):
-    """TODO: assemble Intersection (images + community data from Redis) and call
-    coordinator.analyze; cache the AnalysisResult under the vision key."""
-    return {"status": "todo", "lat": req.lat, "lng": req.lng}
+    """Gather data (cached), run the two-stage vision pipeline, cache + return the result.
+
+    Repeat calls for the same intersection return the cached AnalysisResult instantly.
+    """
+    cached = await cache.get_json(keys.vision_key(req.lat, req.lng))
+    if cached is not None:
+        return cached
+
+    data = await gather_data(req.lat, req.lng, req.city)
+    intersection = Intersection(
+        id=f"{round(req.lat, 5)},{round(req.lng, 5)}",
+        address=req.address or " & ".join(data.get("streets", [])) or f"{req.lat},{req.lng}",
+        lat=req.lat,
+        lng=req.lng,
+        city=req.city,
+        images=[ImageRef(**img) for img in data.get("images", [])],
+    )
+    result = await coordinator.analyze(intersection, data)
+    payload = result.model_dump(mode="json")
+    await cache.set_json(keys.vision_key(req.lat, req.lng), payload, ttl=keys.VISION_TTL)
+    return payload
 
 
 @router.get("/intersection")

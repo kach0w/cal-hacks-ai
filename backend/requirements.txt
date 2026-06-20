@@ -13,10 +13,14 @@ python-dotenv>=1.0
 # ai / agents
 anthropic>=0.34
 uagents>=0.13
-browserbase>=1.0
+browserbase>=1.0          # cloud headless browser for the scraping agents
+playwright>=1.44          # drives the Browserbase session (news + council/311)
 
 # imagery
 pillow>=10.3
+
+# documents
+pypdf>=4.2          # extract text from council-agenda PDFs (accountability log)
 
 # dev
 pytest>=8.2
