@@ -68,7 +68,7 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
 
     resp = await client.messages.create(
         model=settings.claude_vision_model,
-        max_tokens=2000,
+        max_tokens=1024,
         messages=[{"role": "user", "content": content}],
     )
     text = "".join(b.text for b in resp.content if b.type == "text")

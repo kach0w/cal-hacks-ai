@@ -27,3 +27,5 @@ Hard rules:
 - Prefer "low" confidence over a confident guess.
 - Do NOT output pixel coordinates. Use zone only.
 - No prose outside the JSON.
+- Keep each observation under 20 words.
+- Return at most 4 conditions total.

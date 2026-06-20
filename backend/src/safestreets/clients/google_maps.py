@@ -33,4 +33,7 @@ async def streetview_capture_date(lat: float, lng: float) -> str | None:
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(_SV_META, params={"location": f"{lat},{lng}", "key": key})
         data = resp.json()
-    return data.get("date") if data.get("status") == "OK" else None
+    raw = data.get("date") if data.get("status") == "OK" else None
+    if raw and len(raw) == 7:
+        raw = f"{raw}-01"
+    return raw
