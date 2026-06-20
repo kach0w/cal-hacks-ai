@@ -1,0 +1,12 @@
+[project]
+name = "safestreets"
+version = "0.1.0"
+description = "Multi-agent street safety analysis with grounded vision and last-mile routing"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+
+[tool.setuptools.packages.find]
+where = ["src"]

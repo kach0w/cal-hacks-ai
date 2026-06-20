@@ -1,0 +1,47 @@
+[
+  {
+    "key": "ss4a",
+    "name": "Safe Streets and Roads for All (SS4A)",
+    "administrator": "USDOT",
+    "who_applies": "local government / MPO / Tribal government (NOT individuals)",
+    "applies_to": "data-driven projects that reduce roadway fatalities and serious injuries; Implementation grants require an existing safety Action Plan",
+    "note": "FY2026 is the fifth and final guaranteed round under the IIJA authorization (expires Sept 30, 2026). The resident's lever: ask whether your corridor is in the city's SS4A Action Plan.",
+    "url": "https://www.transportation.gov/grants/SS4A"
+  },
+  {
+    "key": "hsip",
+    "name": "Highway Safety Improvement Program (HSIP)",
+    "administrator": "FHWA, administered by state DOTs",
+    "who_applies": "state DOT / local agency via the state process",
+    "applies_to": "data-driven infrastructure safety improvements; the standing backbone independent of SS4A",
+    "note": "Formula program tied to the state's Strategic Highway Safety Plan. Durable even if SS4A is not reauthorized.",
+    "url": "https://highways.dot.gov/safety/hsip"
+  },
+  {
+    "key": "state_local",
+    "name": "State / regional / MPO safety set-asides",
+    "administrator": "varies by state and MPO",
+    "who_applies": "local agency",
+    "applies_to": "varies; many regions run their own Vision Zero or safety funds",
+    "note": "Extensible per city; fill in the relevant local program.",
+    "url": ""
+  },
+  {
+    "key": "maintenance",
+    "name": "City maintenance / work order",
+    "administrator": "city public works",
+    "who_applies": "n/a (operational request, not a grant)",
+    "applies_to": "low-cost recurring fixes: vegetation clearance, repainting, signage",
+    "note": "For these, the ask is a work order, not a funding application.",
+    "url": ""
+  },
+  {
+    "key": "signal_retiming",
+    "name": "Signal retiming request",
+    "administrator": "city / DOT traffic operations",
+    "who_applies": "n/a (operational request)",
+    "applies_to": "LPI and other timing changes that need no construction",
+    "note": "Often the cheapest, fastest win; no capital funding required.",
+    "url": ""
+  }
+]
