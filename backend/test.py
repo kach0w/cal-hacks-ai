@@ -1,10 +1,12 @@
 import asyncio
+from pathlib import Path
 from safestreets.clients.google_maps import satellite_url, streetview_url, streetview_capture_date
 from safestreets.models.intersection import Intersection, ImageRef, ViewDirection
 from safestreets.vision.stage1_blind import run_blind_pass
 from safestreets.vision.stage2_corroborate import corroborate
 from safestreets.intervention.matcher import match
 from safestreets.lastmile.ask import build_social_post, build_council_report
+from safestreets.render.concept import generate as render_concept
 
 # Hardcoded community data for the demo intersection
 DEMO_COMMUNITY_DATA = {
@@ -30,11 +32,11 @@ DEMO_COMMUNITY_DATA = {
 }
 
 INTERSECTIONS = [
-    (37.8716, -122.2727, "Telegraph Ave & Bancroft Way, Berkeley"),
-    (37.8699, -122.2680, "Telegraph Ave & Durant Ave, Berkeley"),
-    (37.8684, -122.2596, "College Ave & Ashby Ave, Berkeley"),
-    (37.8759, -122.2985, "San Pablo Ave & Gilman St, Berkeley"),
-    (37.8649, -122.3010, "San Pablo Ave & Ashby Ave, Berkeley"),
+    (37.86870873221915, -122.25917423795075, "Telegraph Ave & Bancroft Way, Berkeley"),
+    # (37.8699, -122.2680, "Telegraph Ave & Durant Ave, Berkeley"),
+    # (37.8684, -122.2596, "College Ave & Ashby Ave, Berkeley"),
+    # (37.8759, -122.2985, "San Pablo Ave & Gilman St, Berkeley"),
+    # (37.8649, -122.3010, "San Pablo Ave & Ashby Ave, Berkeley"),
 ]
 
 async def build_intersection(lat: float, lng: float, address: str, city: str) -> Intersection:
@@ -57,17 +59,23 @@ async def run_one(lat: float, lng: float, address: str):
     print(f"{'='*60}")
     intersection = await build_intersection(lat, lng, address, "Berkeley")
 
+    # print("Images:")
+    # for img in intersection.images:
+    #     print(f"  [{img.direction.value}] {img.url}")
+
     conditions = await run_blind_pass(intersection)
+    print("-" * 40)
     print("Stage 1:")
     for c in conditions:
         print(f"  [{c.zone.value}] [{c.confidence.value.upper()}] — [{c.observation}]")
+    print("-" * 40)
 
     print("Stage 2 (corroboration):")
     findings = await corroborate(conditions, DEMO_COMMUNITY_DATA)
     for f in findings:
         sources = ", ".join(c.source for c in f.corroboration) or "none"
         print(f"  [{f.condition.zone.value}] {f.status.value} — {sources}")
-
+    print("-" * 40)
     print("Stage 3 (intervention match):")
     for f in findings:
         f.intervention = match(f.condition)
@@ -75,12 +83,21 @@ async def run_one(lat: float, lng: float, address: str):
             print(f"  [{f.condition.zone.value}] → {f.intervention.name}")
         else:
             print(f"  [{f.condition.zone.value}] → NO MATCH: {f.condition.observation[:60]}")
+    print("-" * 40)
 
-    print("Stage 4 (last-mile packet):")
-    social = await build_social_post(findings, intersection, DEMO_COMMUNITY_DATA)
-    print(f"\n  SOCIAL POST:\n  {social}\n")
-    report = await build_council_report(findings, intersection, DEMO_COMMUNITY_DATA)
-    print(f"  COUNCIL REPORT:\n{report}")
+    # print("Stage 4 (last-mile packet):")
+    # social = await build_social_post(findings, intersection, DEMO_COMMUNITY_DATA)
+    # print(f"\n  SOCIAL POST:\n  {social}\n")
+    # report = await build_council_report(findings, intersection, DEMO_COMMUNITY_DATA)
+    # print(f"  COUNCIL REPORT:\n{report}")
+
+    print("Stage 5 (concept renders):")
+    renders = await render_concept(intersection, findings, out_dir=Path("."))
+    for r in renders:
+        print(f"  [{r['zone']}] {r['observation'][:50]}")
+        print(f"    fix:    {r['fix'] or 'general improvements'}")
+        print(f"    before: {r['before_url']}")
+        print(f"    after:  {r['after_url'][:80] + '...' if r['after_url'] else 'FAILED'}")
 
 
 async def main():

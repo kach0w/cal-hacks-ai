@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     # socrata
     socrata_app_token: str = ""
 
-    # midjourney (optional)
-    midjourney_api_key: str = ""
+    # google ai (imagen 3)
+    google_ai_api_key: str = ""
 
     # redis
     redis_url: str = "redis://localhost:6379/0"

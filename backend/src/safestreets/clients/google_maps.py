@@ -13,7 +13,9 @@ _STATIC = "https://maps.googleapis.com/maps/api/staticmap"
 _SV = "https://maps.googleapis.com/maps/api/streetview"
 _SV_META = "https://maps.googleapis.com/maps/api/streetview/metadata"
 
-_HEADINGS = {"north": 0, "east": 90, "south": 180, "west": 270}
+# Approach headings: camera is ON the named leg, looking TOWARD the intersection center.
+# e.g. "north" = camera north of center, facing south (180°).
+_HEADINGS = {"north": 180, "east": 270, "south": 0, "west": 90}
 
 
 def satellite_url(lat: float, lng: float, zoom: int = 19, size: int = 640) -> str:
@@ -24,7 +26,11 @@ def satellite_url(lat: float, lng: float, zoom: int = 19, size: int = 640) -> st
 def streetview_url(lat: float, lng: float, direction: str, size: int = 640) -> str:
     key = get_settings().google_maps_api_key
     heading = _HEADINGS[direction]
-    return f"{_SV}?location={lat},{lng}&size={size}x{size}&heading={heading}&fov=90&key={key}"
+    return (
+        f"{_SV}?location={lat},{lng}&size={size}x{size}"
+        f"&heading={heading}&fov=90&pitch=0"
+        f"&radius=50&source=outdoor&key={key}"
+    )
 
 
 async def streetview_capture_date(lat: float, lng: float) -> str | None:
