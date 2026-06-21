@@ -55,7 +55,7 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
         </div>
 
         <div className="panel-quiet p-3.5">
-          <p className="eyebrow flex items-center gap-1.5 mb-2" style={{ color: "#e84040" }}>
+          <p className="eyebrow flex items-center gap-1.5 mb-2" style={{ color: "#38a832" }}>
             <Link className="h-3 w-3" />
             CORROBORATION
           </p>
@@ -111,11 +111,11 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
 
           {iv.funding_program_keys.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Banknote className="h-4 w-4" style={{ color: "#e84040" }} />
+              <Banknote className="h-4 w-4" style={{ color: "#38a832" }} />
               {iv.funding_program_keys.map((k) => (
                 <span
                   key={k}
-                  style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, border: "2px solid #e84040", background: "rgba(232,64,64,0.1)", padding: "3px 8px", color: "#e84040" }}
+                  style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, border: "2px solid #38a832", background: "rgba(56,168,50,0.1)", padding: "3px 8px", color: "#38a832" }}
                 >
                   {k}
                 </span>

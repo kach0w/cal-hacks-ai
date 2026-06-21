@@ -36,7 +36,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 
           {result.social_post ? (
             <>
-              <div className="p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5, height: 220, overflowY: "auto" }}>
+              <div className="p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5, height: 300, overflowY: "auto" }}>
                 {result.social_post}
               </div>
               <button
@@ -86,7 +86,7 @@ function CouncilReport({ report }: { report: string }) {
     const paras = report.split(/\n\n+/).filter(Boolean);
     const html = paras.map(p => `<p>${p.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>")}</p>`).join("\n");
     const w = window.open("", "_blank")!;
-    w.document.write(`<!DOCTYPE html><html><head><title>SafeStreets Council Letter</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>Streets of Berkeley Council Letter</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   body { background: #e8e4d4; color: #1a1f3d; font-family: "Press Start 2P", monospace; font-size: 11px; line-height: 2; margin: 0; padding: 0; }
@@ -99,7 +99,7 @@ function CouncilReport({ report }: { report: string }) {
   }
 </style></head>
 <body><div class="page">
-<div class="header">▶ SAFESTREETS — COUNCIL LETTER</div>
+<div class="header">▶ STREETS OF BERKELEY — COUNCIL LETTER</div>
 ${html}
 </div></body></html>`);
     w.document.close();

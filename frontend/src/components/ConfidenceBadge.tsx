@@ -37,15 +37,16 @@ export default function ConfidenceBadge({
   size?: "sm" | "md";
 }) {
   const m = META[status];
+  const isConfirmed = status === "CONFIRMED";
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
         gap: 5,
-        border: "2px solid #e84040",
-        background: "rgba(232,64,64,0.12)",
-        color: "#e84040",
+        border: `2px solid ${isConfirmed ? "#38a832" : "#e8c000"}`,
+        background: isConfirmed ? "rgba(56,168,50,0.12)" : "rgba(232,192,0,0.12)",
+        color: isConfirmed ? "#38a832" : "#b89000",
         fontFamily: '"Press Start 2P", monospace',
         fontSize: size === "sm" ? 6 : 7,
         padding: "3px 8px",

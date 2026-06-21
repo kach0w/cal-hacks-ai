@@ -47,8 +47,8 @@ export default function MapView({
             <span className="grid h-10 w-10 place-items-center" style={{ background: "#e8c000", border: "3px solid #b89000" }}>
               <ShieldPin className="h-5 w-5" style={{ color: "#1a1f3d" }} />
             </span>
-            <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 11, color: "#f0ece0" }}>
-              SAFE<span style={{ color: "#e8c000" }}>STREETS</span>
+            <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#f0ece0" }}>
+              STREETS OF <span style={{ color: "#e8c000" }}>BERKELEY</span>
             </span>
           </div>
           <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5" style={{ border: "2px solid #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
@@ -62,7 +62,7 @@ export default function MapView({
           {/* Pokemon-style dialogue box title */}
           <div className="mx-auto mb-8 max-w-2xl p-6 text-left" style={{ background: "#f0ece0", border: "4px solid #2c3060", boxShadow: "6px 6px 0 #0f1428", color: "#1a1f3d" }}>
             <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#6070a0", marginBottom: 12 }}>
-              ▶ SAFESTREETS used ANALYZE!
+              ▶ STREETS OF BERKELEY used ANALYZE!
             </p>
             <h1 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 14, lineHeight: 1.8, color: "#1a1f3d" }}>
               SEE THE STREET.<br />
@@ -70,7 +70,7 @@ export default function MapView({
               <span style={{ color: "#e8c000" }}>MOVE THE CITY.</span>
             </h1>
             <p style={{ fontFamily: '"VT323", monospace', fontSize: 20, marginTop: 14, color: "#3a3f60", lineHeight: 1.5 }}>
-              Pick an intersection. SafeStreets reads the real street, names what's wrong,
+              Pick an intersection. Streets of Berkeley reads the real street, names what's wrong,
               and generates the ask, the grant, and the record the city can't quietly bury.
             </p>
           </div>

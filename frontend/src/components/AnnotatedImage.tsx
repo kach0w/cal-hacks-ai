@@ -77,28 +77,52 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
           {result?.findings.map((f, i) => {
             const pos = zoneToPercent(f.condition.zone);
             const active = open === i;
+            const confirmed = f.status === "CONFIRMED";
+            const pinColor = confirmed ? "#38a832" : "#e8c000";
+            const pinShadow = confirmed ? "#1a5c16" : "#8b6800";
+            const textColor = confirmed ? "#fff" : "#1a1f3d";
             return (
               <button
                 key={i}
                 aria-label={`Finding ${i + 1} at ${f.condition.zone}`}
                 className="group absolute z-10 cursor-pointer"
-                style={{ left: pos.left, top: pos.top, transform: "translate(-50%,-50%)" }}
+                style={{ left: pos.left, top: pos.top, transform: "translate(-50%, -100%)", animation: `marker-in 0.5s ${i * 120}ms both` }}
                 onClick={() => setOpen(active ? null : i)}
               >
-                <span
-                  className="relative grid h-8 w-8 place-items-center font-mono text-sm font-bold group-hover:scale-110 transition-transform duration-150"
-                  style={{
-                    background: "#e84040",
-                    border: active ? "3px solid #fff" : "3px solid #8b0000",
-                    boxShadow: active ? "0 0 0 2px #e84040" : "3px 3px 0 #8b0000",
-                    color: "#fff",
+                {/* Teardrop pin shape */}
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  {/* Circle head */}
+                  <div
+                    className="group-hover:scale-110 transition-transform duration-150"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50% 50% 50% 0",
+                      transform: "rotate(-45deg)",
+                      background: pinColor,
+                      border: active ? `3px solid #fff` : `3px solid ${pinShadow}`,
+                      boxShadow: active ? `0 0 0 2px ${pinColor}, 4px 4px 0 ${pinShadow}` : `4px 4px 0 ${pinShadow}`,
+                    }}
+                  />
+                  {/* Number centered in the circle */}
+                  <span style={{
+                    position: "absolute",
+                    top: 3,
+                    left: 3,
+                    width: 30,
+                    height: 30,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     fontFamily: '"Press Start 2P", monospace',
                     fontSize: 10,
-                    animation: `marker-in 0.5s ${i * 120}ms both`,
-                  }}
-                >
-                  {i + 1}
-                </span>
+                    fontWeight: "bold",
+                    color: textColor,
+                    pointerEvents: "none",
+                  }}>
+                    {i + 1}
+                  </span>
+                </div>
               </button>
             );
           })}

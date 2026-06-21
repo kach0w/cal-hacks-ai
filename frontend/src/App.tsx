@@ -19,7 +19,7 @@ export default function App() {
               <ShieldPin className="h-4 w-4" style={{ color: "#1a1f3d" }} />
             </span>
             <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 10, color: "#f0ece0", letterSpacing: "0.05em" }}>
-              SAFE<span style={{ color: "#e8c000" }}>STREETS</span>
+              STREETS OF <span style={{ color: "#e8c000" }}>BERKELEY</span>
             </span>
           </button>
 
