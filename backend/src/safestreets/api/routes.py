@@ -8,15 +8,17 @@
 """
 from __future__ import annotations
 
+import base64
 import json
 
 from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 
-from safestreets.api.schemas import AnalyzeRequest, SubmitRequest
+from safestreets.api.schemas import AnalyzeRequest, CouncilEmailRequest, SubmitRequest
 from safestreets.clients.google_maps import satellite_url, streetview_capture_date, streetview_url
-from safestreets.lastmile import coalition
-from safestreets.models.intersection import ImageRef, Intersection
+from safestreets.lastmile import coalition, council_lookup, email_agent, pdf
+from safestreets.models.analysis import AnalysisResult
+from safestreets.models.intersection import ImageRef, Intersection, ViewDirection
 from safestreets.orchestrator import coordinator
 from safestreets.orchestrator.dispatch import gather_data, run_pipeline
 from safestreets.store import cache, keys
@@ -81,6 +83,45 @@ async def analyze(req: AnalyzeRequest):
     result = await coordinator.analyze(intersection, data, vision_key=vkey)
     payload = result.model_dump(mode="json")
     await cache.set_json(vkey, payload, ttl=keys.VISION_TTL)
+    return payload
+
+
+@router.post("/council-email")
+async def council_email(req: CouncilEmailRequest):
+    """Draft a constituent email to the council member(s) for this intersection and return
+    it with a ready-to-send `.eml` (the council letter PDF attached).
+
+    Requires a prior /analyze for the same point (it reuses the cached findings + letter).
+    The agent writes the subject + human-sounding body; recipients are resolved by
+    jurisdiction via Socrata. The frontend downloads the `.eml` to open in the user's mail
+    client. Cached so re-opening the dialog is instant and doesn't re-bill the LLM.
+    """
+    cached_email = await cache.get_json(keys.council_email_key(req.lat, req.lng))
+    if cached_email is not None:
+        return cached_email
+
+    cached = await cache.get_json(keys.vision_key(req.lat, req.lng))
+    if cached is None:
+        return {"status": "not_analyzed"}
+
+    result = AnalysisResult.model_validate(cached)
+    community = await cache.get_json(keys.scrape_key(req.lat, req.lng)) or {}
+    contacts = await council_lookup.find_council_contacts(req.lat, req.lng, result.intersection.city)
+    draft = await email_agent.build_council_email(result.findings, result.intersection, community, contacts)
+
+    letter_text = result.council_report or draft.body
+    pdf_bytes = pdf.council_letter_pdf(f"Pedestrian Safety — {result.intersection.address}", letter_text)
+    pdf_name = email_agent.pdf_filename(result.intersection)
+    eml = email_agent.build_eml(draft, pdf_bytes, pdf_name)
+
+    payload = {
+        "subject": draft.subject,
+        "body": draft.body,
+        "recipients": [c.model_dump() for c in draft.recipients],
+        "eml_base64": base64.b64encode(eml.encode("utf-8")).decode(),
+        "filename": pdf_name.replace(".pdf", ".eml"),
+    }
+    await cache.set_json(keys.council_email_key(req.lat, req.lng), payload, ttl=keys.VISION_TTL)
     return payload
 
 

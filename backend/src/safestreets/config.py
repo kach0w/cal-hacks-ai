@@ -36,6 +36,23 @@ class Settings(BaseSettings):
     # socrata
     socrata_app_token: str = ""
 
+    # council district lookup (Socrata point-in-polygon -> jurisdiction -> member emails).
+    # Defaults target Berkeley's published "City Council Districts" boundary dataset; the
+    # `intersects(<geom>, POINT(lng lat))` query resolves which district a corner falls in.
+    council_districts_domain: str = "data.cityofberkeley.info"
+    # Dataset id of the council-districts boundary set. Left blank by default because the
+    # id differs per portal; set COUNCIL_DISTRICTS_DATASET in .env to enable the live
+    # point-in-polygon lookup. Without it we fall back to the configured district map /
+    # general inbox so a draft always has a valid recipient.
+    council_districts_dataset: str = ""
+    council_geom_column: str = "the_geom"
+    # General council inbox used as the always-valid fallback recipient.
+    council_general_email: str = "council@cityofberkeley.info"
+    # Optional JSON map of district -> {"name": ..., "email": ...}; overrides/augments
+    # whatever contact columns the Socrata dataset carries. e.g.
+    # COUNCIL_DISTRICT_EMAILS='{"1": {"name": "Jane Doe", "email": "district1@..."}}'
+    council_district_emails: str = ""
+
     # google ai (imagen 3)
     google_ai_api_key: str = ""
 

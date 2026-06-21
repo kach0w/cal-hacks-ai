@@ -38,14 +38,17 @@ def _intersection_id(msg: AnalyzeRequest) -> str:
 
 
 def _to_community_data(results: dict[str, Any]) -> dict[str, Any]:
-    """Map dispatch's raw agent results onto the keys the coordinator's corroboration
-    and accountability steps expect (crash_data / complaints_311 / news / council)."""
-    council_311 = results.get("council_311") or {}
+    """Map dispatch's gathered results onto the keys the coordinator's corroboration
+    and accountability steps expect (crash_data / complaints_311 / news / council).
+
+    Mirrors the keys `dispatch.gather_data` actually returns; news/council come from
+    the city-wide civic scrape rather than this per-intersection gather, so they
+    default to empty here."""
     return {
-        "crash_data": results.get("structured") or [],
+        "crash_data": results.get("crash_data") or [],
         "news": results.get("news") or [],
-        "complaints_311": council_311.get("complaints_311", []),
-        "council": council_311.get("council", []),
+        "complaints_311": results.get("complaints_311") or [],
+        "council": results.get("council") or [],
     }
 
 
@@ -54,7 +57,7 @@ async def _run_pipeline(ctx: Context, msg: AnalyzeRequest, job_id: str) -> None:
     result under the vision key so it's retrievable via GET /intersection."""
     try:
         # 1. Gather community data through the shared adaptive dispatch.
-        results = await dispatch.gather_community_data(msg.lat, msg.lng, msg.city)
+        results = await dispatch.gather_data(msg.lat, msg.lng, msg.city)
 
         # 2. Assemble the intersection (imagery is one of the gathered agents).
         intersection = Intersection(

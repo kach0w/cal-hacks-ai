@@ -11,6 +11,11 @@ class AnalyzeRequest(BaseModel):
     city: str | None = None
 
 
+class CouncilEmailRequest(BaseModel):
+    lat: float
+    lng: float
+
+
 class SubmitRequest(BaseModel):
     lat: float
     lng: float

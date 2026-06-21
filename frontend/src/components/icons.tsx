@@ -199,6 +199,19 @@ export const Heart = (p: IconProps) => (
   </Base>
 );
 
+export const Mail = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m2 7 10 6 10-6" />
+  </Base>
+);
+
+export const Paperclip = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M21 9 11.5 18.5a3.5 3.5 0 0 1-5-5L15 5a2.3 2.3 0 0 1 3.3 3.3L9.8 16.8" />
+  </Base>
+);
+
 export const Printer = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9V2h12v7" />
