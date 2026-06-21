@@ -15,7 +15,7 @@ export default function MapView({
   onSelect: (p: { lat: number; lng: number }) => void;
 }) {
   const DEMO_COORDS = "37.86870873221915, -122.25917423795075";
-  const [coords, setCoords] = useState("");
+  const [coords, setCoords] = useState(DEMO_COORDS);
   const [picked, setPicked] = useState<GeoPlace | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,27 +97,6 @@ export default function MapView({
                   boxSizing: "border-box",
                 }}
               />
-              {!coords && (
-                <button
-                  type="button"
-                  onClick={() => setCoords(DEMO_COORDS)}
-                  style={{
-                    position: "absolute",
-                    right: 8,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "#e8c000",
-                    border: "2px solid #b89000",
-                    color: "#1a1f3d",
-                    fontFamily: '"Press Start 2P", monospace',
-                    fontSize: 7,
-                    padding: "4px 8px",
-                    cursor: "pointer",
-                  }}
-                >
-                  DEMO
-                </button>
-              )}
             </div>
             <button type="submit" className="btn-primary">
               SCAN <ArrowRight className="h-4 w-4" />

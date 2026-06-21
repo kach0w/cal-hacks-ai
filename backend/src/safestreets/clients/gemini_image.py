@@ -17,7 +17,7 @@ from safestreets.config import get_settings
 
 log = logging.getLogger(__name__)
 
-_MODEL = "gemini-2.5-flash-image"
+_MODEL = "gemini-3.1-flash-image-preview"
 
 _VIEW_TO_MIME = {
     "satellite": "image/png",
