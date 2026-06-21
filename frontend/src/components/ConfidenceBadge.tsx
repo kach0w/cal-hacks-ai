@@ -10,21 +10,21 @@ const META: Record<
     text: "text-confirmed",
     dot: "bg-confirmed",
     Icon: Check,
-    label: "CONFIRMED",
+    label: "Corroborated",
   },
   CANDIDATE: {
     ring: "border-candidate/30 bg-candidate/10",
     text: "text-candidate",
     dot: "bg-candidate",
     Icon: Eye,
-    label: "CANDIDATE",
+    label: "Not corroborated",
   },
   REPORTED: {
-    ring: "border-reported/30 bg-reported/10",
-    text: "text-reported",
-    dot: "bg-reported",
-    Icon: FileWarning,
-    label: "REPORTED",
+    ring: "border-candidate/30 bg-candidate/10",
+    text: "text-candidate",
+    dot: "bg-candidate",
+    Icon: Eye,
+    label: "Not corroborated",
   },
 };
 

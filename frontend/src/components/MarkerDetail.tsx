@@ -43,7 +43,7 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
         <div className="panel-quiet p-3.5">
           <p className="eyebrow flex items-center gap-1.5 text-brand">
             <Eye className="h-3.5 w-3.5" />
-            Seen — blind pass
+            Spotted — street scan
             <span className={`ml-auto font-mono ${CONFIDENCE_TINT[c.confidence] ?? ""}`}>
               {c.confidence}
             </span>

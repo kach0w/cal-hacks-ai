@@ -14,8 +14,17 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
-    font-feature-settings: "ss01", "cv01";
+    background: #f5f4ef;
+    color: #1a1a1a;
+    font-family: Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: Georgia, "Times New Roman", serif;
+    letter-spacing: -0.01em;
   }
 
   :focus-visible {
@@ -23,44 +32,53 @@
   }
 
   ::selection {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.25);
     color: #111;
   }
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.15);
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
+    background: rgba(0,0,0,0.18);
+    border-radius: 2px;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); background-clip: padding-box; }
 }
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-gray-200 bg-white shadow-sm;
+    background: #fff;
+    border: 1px solid #d4d0c8;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
 
   .panel-quiet {
-    @apply rounded-xl border border-gray-100 bg-gray-50;
+    background: #faf9f6;
+    border: 1px solid #e0ddd5;
+    border-radius: 3px;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400;
+    font-family: ui-monospace, "Fira Code", monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #888;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
-           transition-all duration-200 cursor-pointer select-none
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           transition-colors duration-100 cursor-pointer select-none border
            disabled:cursor-not-allowed disabled:opacity-50;
+    border-radius: 3px;
+    font-family: Georgia, serif;
   }
   .btn-primary {
-    @apply btn bg-amber-500 text-white hover:bg-amber-400 active:translate-y-px shadow-sm;
+    @apply btn bg-amber-500 text-white border-amber-600 hover:bg-amber-600;
   }
   .btn-ghost {
-    @apply btn border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300;
+    @apply btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50;
   }
 }
 
@@ -68,6 +86,11 @@
   .bg-dots {
     background-image: radial-gradient(rgba(0,0,0,0.08) 1px, transparent 1px);
     background-size: 22px 22px;
+  }
+  .bg-grid-faint {
+    background-image:
+      linear-gradient(to right, rgba(148,163,184,0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148,163,184,0.08) 1px, transparent 1px);
   }
 }
 
@@ -79,3 +102,25 @@
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes marker-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  70% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes ping-ring {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+.animate-fade-up { animation: fade-up 0.35s ease both; }
+.animate-ping-ring { animation: ping-ring 2s ease-out infinite; }
+.animate-scan { animation: scan 3.5s linear infinite; }

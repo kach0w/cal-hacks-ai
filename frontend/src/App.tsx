@@ -11,28 +11,28 @@ export default function App() {
   if (!selected) return <MapView onSelect={setSelected} />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3.5">
+    <div className="min-h-screen" style={{ background: "#f5f4ef" }}>
+      <header className="sticky top-0 z-30 border-b border-[#d4d0c8] bg-white">
+        <div className="mx-auto flex max-w-4xl items-center gap-4 px-5 py-3">
           <button
             onClick={() => setSelected(null)}
-            className="flex items-center gap-2.5 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-50 text-amber-500 ring-1 ring-amber-200">
-              <ShieldPin className="h-5 w-5" />
+            <span className="grid h-7 w-7 place-items-center bg-amber-100 text-amber-600" style={{ borderRadius: 2 }}>
+              <ShieldPin className="h-4 w-4" />
             </span>
-            <span className="hidden text-sm font-semibold tracking-tight text-gray-900 sm:block">
-              Safe<span className="text-amber-500">Streets</span>
+            <span className="text-base font-bold tracking-tight text-gray-900">
+              Safe<span className="text-amber-600">Streets</span>
             </span>
           </button>
 
-          <span className="hidden items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 md:inline-flex">
-            <MapPin className="h-3.5 w-3.5 text-gray-400" />
-            <span className="font-mono">{selected.lat.toFixed(4)}, {selected.lng.toFixed(4)}</span>
+          <span className="hidden items-center gap-1.5 border border-[#d4d0c8] bg-[#faf9f6] px-2.5 py-1 text-xs text-gray-500 md:inline-flex font-mono" style={{ borderRadius: 2 }}>
+            <MapPin className="h-3 w-3 text-gray-400" />
+            {selected.lat.toFixed(4)}, {selected.lng.toFixed(4)}
           </span>
 
-          <button onClick={() => setSelected(null)} className="btn-ghost ml-auto px-3 py-2 text-xs">
-            <Search className="h-4 w-4" />
+          <button onClick={() => setSelected(null)} className="btn-ghost ml-auto px-3 py-1.5 text-xs">
+            <Search className="h-3.5 w-3.5" />
             New search
           </button>
         </div>
@@ -40,7 +40,7 @@ export default function App() {
 
       <main
         key={`${selected.lat},${selected.lng}`}
-        className="mx-auto max-w-4xl space-y-5 px-5 py-6"
+        className="mx-auto max-w-4xl space-y-4 px-5 py-5"
       >
         <AnnotatedImage lat={selected.lat} lng={selected.lng} />
         <BeforeAfterPanel lat={selected.lat} lng={selected.lng} />

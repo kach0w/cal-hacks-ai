@@ -136,8 +136,8 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
         {/* Legend */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500">
-          <Legend color="bg-green-500" label="Confirmed — seen & corroborated" />
-          <Legend color="bg-amber-400" label="Problem — identified, needs review" />
+          <Legend color="bg-green-500" label="Corroborated — independently verified" />
+          <Legend color="bg-amber-400" label="Not corroborated — flagged, needs review" />
         </div>
       </div>
 

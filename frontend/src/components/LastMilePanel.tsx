@@ -19,54 +19,55 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 
   return (
     <section className="panel overflow-hidden">
-      <div className="border-b border-gray-100 px-6 py-5">
-        <h2 className="text-base font-semibold text-gray-900">Take action</h2>
-        <p className="mt-0.5 text-sm text-gray-400">Ready-to-use outputs from the analysis</p>
+      <div className="border-b border-[#d4d0c8] px-5 py-4">
+        <h2 className="text-base font-bold text-gray-900">Take action</h2>
+        <p className="mt-0.5 text-sm text-gray-500">Ready-to-use outputs from the analysis</p>
       </div>
 
-      <div className="grid gap-0 divide-y divide-gray-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+      <div className="grid gap-0 divide-y divide-[#d4d0c8] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
         {/* Social post */}
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-sky-50 text-sky-500">
-              <Megaphone className="h-4 w-4" />
+        <div className="p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center bg-sky-50 text-sky-600" style={{ borderRadius: 2 }}>
+              <Megaphone className="h-3.5 w-3.5" />
             </span>
-            <h3 className="text-sm font-semibold text-gray-900">Social media post</h3>
+            <h3 className="text-sm font-bold text-gray-900">Social media post</h3>
           </div>
 
           {result.social_post ? (
             <>
-              <div className="min-h-[140px] rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+              <div className="min-h-[140px] border border-[#d4d0c8] bg-[#faf9f6] p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ borderRadius: 2 }}>
                 {result.social_post}
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(result.social_post!)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 border border-[#d4d0c8] bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                style={{ borderRadius: 2 }}
               >
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-3 w-3" />
                 Copy to clipboard
               </button>
             </>
           ) : (
-            <div className="flex min-h-[140px] items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
+            <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[#d4d0c8] text-sm text-gray-400" style={{ borderRadius: 2 }}>
               Generating…
             </div>
           )}
         </div>
 
         {/* Council report */}
-        <div className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-50 text-amber-500">
-              <FileText className="h-4 w-4" />
+        <div className="p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center bg-amber-50 text-amber-600" style={{ borderRadius: 2 }}>
+              <FileText className="h-3.5 w-3.5" />
             </span>
-            <h3 className="text-sm font-semibold text-gray-900">Council report</h3>
+            <h3 className="text-sm font-bold text-gray-900">Council letter</h3>
           </div>
 
           {result.council_report ? (
             <CouncilReport report={result.council_report} />
           ) : (
-            <div className="flex min-h-[140px] items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
+            <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[#d4d0c8] text-sm text-gray-400" style={{ borderRadius: 2 }}>
               Generating…
             </div>
           )}
@@ -79,42 +80,51 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 function CouncilReport({ report }: { report: string }) {
   const [open, setOpen] = useState(false);
 
+  const paragraphs = report.split(/\n\n+/).filter(Boolean);
+
   function printReport() {
+    const paras = report.split(/\n\n+/).filter(Boolean);
+    const html = paras.map(p => `<p>${p.replace(/\n/g, "<br>").replace(/</g, "&lt;").replace(/&lt;br>/g, "<br>")}</p>`).join("\n");
     const w = window.open("", "_blank")!;
     w.document.write(`<!DOCTYPE html><html><head><title>Council Report</title><style>
-      body { font-family: Georgia, serif; max-width: 760px; margin: 60px auto; line-height: 1.8; color: #111; font-size: 15px; }
-      pre { white-space: pre-wrap; font-family: inherit; }
-    </style></head><body><pre>${report.replace(/</g, "&lt;")}</pre></body></html>`);
+      body { font-family: Georgia, "Times New Roman", serif; max-width: 680px; margin: 80px auto; line-height: 1.8; color: #111; font-size: 15px; }
+      p { margin: 0 0 1.2em 0; }
+    </style></head><body>${html}</body></html>`);
     w.document.close();
     w.print();
   }
 
   return (
     <>
-      <div className="min-h-[140px] overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-        <div
-          className={`p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap transition-all ${open ? "" : "line-clamp-5"}`}
-        >
-          {report}
+      <div
+        className="border border-[#d4d0c8] bg-[#faf9f6] overflow-hidden"
+        style={{ borderRadius: 2, maxHeight: open ? "none" : 200, overflow: "hidden", position: "relative" }}
+      >
+        <div className="p-4" style={{ fontFamily: "Georgia, serif", fontSize: 14, lineHeight: 1.8, color: "#222" }}>
+          {paragraphs.map((para, i) => (
+            <p key={i} style={{ margin: "0 0 1em 0" }}>{para}</p>
+          ))}
         </div>
         {!open && (
-          <div className="bg-gradient-to-t from-gray-50 to-transparent h-8 -mt-8 relative pointer-events-none" />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: "linear-gradient(to top, #faf9f6, transparent)", pointerEvents: "none" }} />
         )}
       </div>
 
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 border border-[#d4d0c8] bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+          style={{ borderRadius: 2, fontFamily: "Georgia, serif" }}
         >
-          {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {open ? "Collapse" : "Read full"}
+          {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {open ? "Collapse" : "Read full letter"}
         </button>
         <button
           onClick={printReport}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-medium text-white shadow-sm hover:bg-amber-400 transition-colors"
+          className="inline-flex items-center gap-1.5 bg-amber-500 px-3 py-1.5 text-xs text-white hover:bg-amber-600 transition-colors"
+          style={{ borderRadius: 2, fontFamily: "Georgia, serif" }}
         >
-          <Printer className="h-3.5 w-3.5" />
+          <Printer className="h-3 w-3" />
           Export PDF
         </button>
       </div>

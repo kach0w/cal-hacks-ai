@@ -5,8 +5,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Fira Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ['"Fira Code"', "ui-monospace", "SFMono-Regular", "monospace"],
+        sans: ["Georgia", '"Times New Roman"', "serif"],
+        mono: ['"Fira Code"', "Menlo", "ui-monospace", "monospace"],
+        serif: ["Georgia", '"Times New Roman"', "serif"],
       },
       colors: {
         // Ink layers — OLED-leaning dark surfaces

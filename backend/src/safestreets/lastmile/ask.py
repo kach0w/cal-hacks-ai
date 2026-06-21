@@ -80,22 +80,30 @@ async def build_council_report(
         if council_records else "No prior council record found."
     )
 
-    prompt = f"""Write a formal written report to submit to a city council or traffic engineering department
-requesting safety improvements at the following intersection. Use clear, professional language.
-Structure it as: Summary, Crash Record, Identified Conditions (each with observation, evidence, and recommended fix + cost + funding source), Prior Notice to City, and Specific Request.
+    from datetime import date
+    today = date.today().strftime("%B %d, %Y")
+
+    prompt = f"""Write a formal letter to submit to a city council transportation committee requesting pedestrian safety improvements. Format it exactly as a real letter — no markdown, no headers with pound signs, no bullet asterisks. Use plain prose paragraphs with blank lines between them.
+
+The letter structure should be:
+- Date line: {today}
+- Blank line
+- To: City Council Transportation Committee, City of Berkeley
+- From: SafeStreets Community Safety Initiative
+- Re: Pedestrian Safety Hazards at {intersection.address}
+- Blank line
+- Opening paragraph: purpose of the letter and urgency
+- Body paragraphs: one per finding, describing the observed condition, the evidence or data supporting it, and the recommended intervention with estimated cost and applicable funding program (SS4A, HSIP, or capital work order)
+- Crash record paragraph: {_crash_summary(community_data)}
+- Prior notice paragraph: {accountability_note}
+- Closing paragraph: specific numbered requests (written out as "First, ... Second, ... Third, ...")
+- Sign-off: Respectfully submitted, SafeStreets Safety Analysis System
 
 Intersection: {intersection.address}
-Crash record: {_crash_summary(community_data)}
-Prior city notice: {accountability_note}
-
 Findings:
 {_findings_summary(findings)}
 
-Rules:
-- Be specific and cite the data sources
-- For each fix, name the funding program (SS4A, HSIP, or work order) that would apply
-- Tone: professional, factual, urgent but not accusatory
-- End with a clear numbered list of requested actions"""
+Write only the letter text. No markdown formatting whatsoever. No asterisks, no pound signs, no dashes as bullets. Plain text letter."""
 
     resp = await client.messages.create(
         model=settings.claude_text_model,
