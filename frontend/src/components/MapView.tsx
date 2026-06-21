@@ -98,7 +98,7 @@ export default function MapView({
             <button
               type="submit"
               className="btn-primary"
-              style={{ padding: "0", width: 46, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "stretch" }}
+              style={{ padding: "0", width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "center" }}
             >
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
