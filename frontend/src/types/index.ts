@@ -74,6 +74,22 @@ export interface AnalysisResult {
   council_report: string | null;
 }
 
+export interface CouncilContact {
+  name: string;
+  email: string;
+  district: string | null;
+  role: string;
+  source: string;
+}
+
+export interface CouncilEmailDraft {
+  subject: string;
+  body: string;
+  recipients: CouncilContact[];
+  eml_base64: string;   // base64 of a ready-to-send .eml (PDF attached)
+  filename: string;
+}
+
 export interface ProgressEvent {
   agent: string;
   msg: string;

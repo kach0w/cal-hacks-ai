@@ -26,6 +26,10 @@ def vision_key(lat: float, lng: float) -> str:
     return f"ss:vision:{_ll(lat, lng)}"
 
 
+def council_email_key(lat: float, lng: float) -> str:
+    return f"ss:council-email:{_ll(lat, lng)}"
+
+
 def intervention_key(lat: float, lng: float) -> str:
     return f"ss:intervention:{_ll(lat, lng)}"
 

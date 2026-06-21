@@ -1,4 +1,4 @@
-import type { AnalysisResult, ProgressEvent } from "../types";
+import type { AnalysisResult, CouncilEmailDraft, ProgressEvent } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -16,6 +16,19 @@ export async function analyzeIntersection(lat: number, lng: number): Promise<Ana
   });
   if (!res.ok) return null;
   return res.json();
+}
+
+/** Ask the email agent to draft a council email (with the PDF-attached .eml) for a point. */
+export async function composeCouncilEmail(lat: number, lng: number): Promise<CouncilEmailDraft | null> {
+  const res = await fetch(`${BASE}/council-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat, lng }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data || data.status === "not_analyzed" || !data.eml_base64) return null;
+  return data as CouncilEmailDraft;
 }
 
 export async function submitReport(body: {

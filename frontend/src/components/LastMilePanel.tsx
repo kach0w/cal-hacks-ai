@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useIntersection } from "../hooks/useIntersection";
-import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart } from "./icons";
+import { composeCouncilEmail } from "../api/client";
+import type { CouncilEmailDraft } from "../types";
+import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail, Paperclip } from "./icons";
 
 export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }) {
   const { result, loading } = useIntersection(lat, lng);
@@ -53,7 +55,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
           </div>
 
           {result.council_report ? (
-            <CouncilReport report={result.council_report} />
+            <CouncilReport report={result.council_report} lat={lat} lng={lng} />
           ) : (
             <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[#d4d0c8] text-sm text-gray-400" style={{ borderRadius: 2 }}>
               Generating…
@@ -65,7 +67,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
   );
 }
 
-function CouncilReport({ report }: { report: string }) {
+function CouncilReport({ report, lat, lng }: { report: string; lat: number; lng: number }) {
   const [open, setOpen] = useState(false);
 
   const paragraphs = report.split(/\n\n+/).filter(Boolean);
@@ -133,7 +135,117 @@ ${html}
           Export PDF
         </button>
       </div>
+
+      <EmailCouncil lat={lat} lng={lng} />
     </>
+  );
+}
+
+/**
+ * Email-the-council action that sits under the printable report. An LLM email agent on the
+ * backend writes a human, professional message (concerns + statistics + call to action) and
+ * a subject line, resolves the council member(s) by jurisdiction (Socrata), and returns a
+ * ready-to-send .eml with the report PDF already attached. We download that .eml so it opens
+ * in the user's own mail client for a final review + send.
+ */
+function EmailCouncil({ lat, lng }: { lat: number; lng: number }) {
+  const [draft, setDraft] = useState<CouncilEmailDraft | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  async function compose() {
+    setLoading(true);
+    setError(false);
+    const d = await composeCouncilEmail(lat, lng);
+    if (d) setDraft(d);
+    else setError(true);
+    setLoading(false);
+  }
+
+  function download() {
+    if (!draft) return;
+    const bytes = Uint8Array.from(atob(draft.eml_base64), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: "message/rfc822" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = draft.filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="mt-4" style={{ borderTop: "2px dashed #2c3060", paddingTop: 14 }}>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="grid h-6 w-6 place-items-center" style={{ background: "#daeeff", border: "2px solid #2c3060" }}>
+          <Mail className="h-3 w-3" style={{ color: "#3060c8" }} />
+        </span>
+        <h4 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>EMAIL CITY COUNCIL</h4>
+      </div>
+
+      {!draft && (
+        <>
+          <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#6070a0", margin: "0 0 8px" }}>
+            An email agent drafts a professional message to the councilmember for this
+            intersection — with the report PDF attached.
+          </p>
+          <button
+            onClick={compose}
+            disabled={loading}
+            className="btn-primary"
+            style={{ fontSize: 8, padding: "8px 12px", opacity: loading ? 0.6 : 1 }}
+          >
+            <Mail className="h-3 w-3" />
+            {loading ? "DRAFTING…" : "Draft email to council"}
+          </button>
+          {error && (
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#e84040", margin: "8px 0 0" }}>
+              Couldn't draft the email — run the analysis for this intersection first, then retry.
+            </p>
+          )}
+        </>
+      )}
+
+      {draft && (
+        <div style={{ border: "2px solid #2c3060", background: "#e8e4d4" }}>
+          <div style={{ padding: "8px 10px", borderBottom: "2px solid #2c3060" }}>
+            <FieldRow label="TO">
+              {draft.recipients.map((r, i) => (
+                <span key={i} title={r.role + (r.district ? ` · District ${r.district}` : "")} style={{ display: "inline-block", marginRight: 6, marginBottom: 4, padding: "2px 6px", background: "#daeeff", border: "2px solid #3060c8", fontFamily: '"VT323", monospace', fontSize: 15, color: "#1a1f3d" }}>
+                  {r.email}
+                </span>
+              ))}
+            </FieldRow>
+            <FieldRow label="SUBJECT">
+              <span style={{ fontFamily: '"VT323", monospace', fontSize: 17, color: "#1a1f3d" }}>{draft.subject}</span>
+            </FieldRow>
+          </div>
+
+          <div style={{ padding: "10px", maxHeight: 180, overflowY: "auto", fontFamily: '"VT323", monospace', fontSize: 17, lineHeight: 1.4, color: "#1a1f3d", whiteSpace: "pre-wrap" }}>
+            {draft.body}
+          </div>
+
+          <div style={{ padding: "8px 10px", borderTop: "2px solid #2c3060", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>
+              <Paperclip className="h-3 w-3" />
+              {draft.filename.replace(/\.eml$/, ".pdf")}
+            </span>
+            <button onClick={download} className="btn-primary" style={{ marginLeft: "auto", fontSize: 8, padding: "8px 12px" }}>
+              <Mail className="h-3 w-3" />
+              Open in mail app
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 4 }}>
+      <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", flexShrink: 0, width: 56 }}>{label}</span>
+      <span style={{ flex: 1 }}>{children}</span>
+    </div>
   );
 }
 
