@@ -3,124 +3,148 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: light;
-  }
+  :root { color-scheme: dark; }
 
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
+  html, body, #root { height: 100%; }
 
   body {
-    background: #f5f4ef;
-    color: #1a1a1a;
-    font-family: Georgia, "Times New Roman", serif;
-    -webkit-font-smoothing: antialiased;
-    font-size: 15px;
+    background: #1a1f3d;
+    color: #f0ece0;
+    font-family: "VT323", monospace;
+    font-size: 20px;
+    line-height: 1.5;
+    image-rendering: pixelated;
+  }
+
+  h1, h2, h3, h4, .pixel {
+    font-family: "Press Start 2P", monospace;
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4 {
-    font-family: Georgia, "Times New Roman", serif;
-    letter-spacing: -0.01em;
-  }
-
   :focus-visible {
-    @apply outline-none ring-2 ring-amber-500/70 ring-offset-2 ring-offset-white;
+    outline: 3px solid #e8c000;
+    outline-offset: 2px;
   }
 
   ::selection {
-    background: rgba(245, 158, 11, 0.25);
-    color: #111;
+    background: #e8c000;
+    color: #1a1f3d;
   }
 
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.18);
-    border-radius: 2px;
-  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0f1428; }
+  ::-webkit-scrollbar-thumb { background: #2c3060; }
 }
 
 @layer components {
+  /* Pokemon-style dialogue box */
   .panel {
-    background: #fff;
-    border: 1px solid #d4d0c8;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    background: #f0ece0;
+    color: #1a1f3d;
+    border: 4px solid #2c3060;
+    border-radius: 0;
+    box-shadow: 4px 4px 0 #0f1428;
   }
 
   .panel-quiet {
-    background: #faf9f6;
-    border: 1px solid #e0ddd5;
-    border-radius: 3px;
+    background: #e8e4d4;
+    color: #1a1f3d;
+    border: 2px solid #2c3060;
+    border-radius: 0;
   }
 
+  /* Pixel eyebrow label */
   .eyebrow {
-    font-family: ui-monospace, "Fira Code", monospace;
-    font-size: 10px;
-    font-weight: 600;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: #888;
+    letter-spacing: 0.1em;
+    color: #6070a0;
   }
 
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
-           transition-colors duration-100 cursor-pointer select-none border
-           disabled:cursor-not-allowed disabled:opacity-50;
-    border-radius: 3px;
-    font-family: Georgia, serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: "Press Start 2P", monospace;
+    font-size: 9px;
+    padding: 10px 16px;
+    border: 3px solid;
+    border-radius: 0;
+    cursor: pointer;
+    transition: none;
+    image-rendering: pixelated;
+    line-height: 1.4;
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none !important;
   }
   .btn-primary {
-    @apply btn bg-amber-500 text-white border-amber-600 hover:bg-amber-600;
+    background: #e8c000;
+    color: #1a1f3d;
+    border-color: #b89000;
+    box-shadow: 3px 3px 0 #b89000;
+  }
+  .btn-primary:hover {
+    background: #f8d800;
   }
   .btn-ghost {
-    @apply btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50;
+    background: #f0ece0;
+    color: #1a1f3d;
+    border-color: #2c3060;
+    box-shadow: 3px 3px 0 #2c3060;
+  }
+  .btn-ghost:hover {
+    background: #e8e4d4;
   }
 }
 
 @layer utilities {
-  .bg-dots {
-    background-image: radial-gradient(rgba(0,0,0,0.08) 1px, transparent 1px);
-    background-size: 22px 22px;
-  }
   .bg-grid-faint {
     background-image:
-      linear-gradient(to right, rgba(148,163,184,0.08) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(148,163,184,0.08) 1px, transparent 1px);
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .bg-dots {
+    background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
   }
 }
 
 @keyframes fade-up {
-  0% { opacity: 0; transform: translateY(6px); }
-  100% { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes marker-in {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
-  70% { transform: translate(-50%, -50%) scale(1.1); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.4); }
+  70%  { transform: translate(-50%,-50%) scale(1.12); }
+  100% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 }
 @keyframes ping-ring {
-  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
-  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+  0%   { transform: translate(-50%,-50%) scale(0.9); opacity: 0.7; }
+  100% { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
 }
 @keyframes scan {
-  0% { transform: translateY(-100%); }
+  0%   { transform: translateY(-100%); }
   100% { transform: translateY(400%); }
 }
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
 
-.animate-fade-up { animation: fade-up 0.35s ease both; }
-.animate-ping-ring { animation: ping-ring 2s ease-out infinite; }
-.animate-scan { animation: scan 3.5s linear infinite; }
+.animate-fade-up    { animation: fade-up 0.35s ease both; }
+.animate-ping-ring  { animation: ping-ring 2s ease-out infinite; }
+.animate-scan       { animation: scan 3.5s linear infinite; }
+.animate-blink      { animation: blink 1s steps(1) infinite; }

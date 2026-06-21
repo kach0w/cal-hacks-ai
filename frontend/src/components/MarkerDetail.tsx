@@ -26,14 +26,14 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
   return (
     <div className="animate-fade-up space-y-4">
       <div className="flex flex-wrap items-center gap-2.5">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-gray-50 font-mono text-sm font-bold text-gray-900">
+        <span className="grid h-8 w-8 place-items-center" style={{ background: "#e8c000", border: "2px solid #b89000", fontFamily: '"Press Start 2P", monospace', fontSize: 10, color: "#1a1f3d", fontWeight: "bold" }}>
           {index}
         </span>
-        <h3 className="text-base font-semibold text-gray-900">
+        <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#1a1f3d", lineHeight: 1.6 }}>
           {iv?.name ?? c.observation}
         </h3>
         <ConfidenceBadge status={finding.status} />
-        <span className="rounded-md bg-gray-50 px-2 py-0.5 font-mono text-[11px] text-gray-500">
+        <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, border: "2px solid #2c3060", background: "#e8e4d4", padding: "3px 8px", color: "#6070a0" }}>
           {c.zone.replace("_", " ")}
         </span>
       </div>
@@ -41,35 +41,32 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
       {/* Two independent signals */}
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="panel-quiet p-3.5">
-          <p className="eyebrow flex items-center gap-1.5 text-brand">
-            <Eye className="h-3.5 w-3.5" />
-            Spotted — street scan
-            <span className={`ml-auto font-mono ${CONFIDENCE_TINT[c.confidence] ?? ""}`}>
-              {c.confidence}
-            </span>
+          <p className="eyebrow flex items-center gap-1.5 mb-2" style={{ color: "#e8c000" }}>
+            <Eye className="h-3 w-3" />
+            SPOTTED — STREET SCAN
+            <span className="ml-auto" style={{ color: "#6070a0" }}>{c.confidence}</span>
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-gray-500">{c.observation}</p>
-          <p className="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-gray-500">
+          <p style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#1a1f3d", lineHeight: 1.4 }}>{c.observation}</p>
+          <p className="mt-2 flex items-center gap-1.5" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
             <Camera className="h-3 w-3" />
             {c.source_view}
             {c.source_capture_date ? ` · ${c.source_capture_date}` : ""}
-            {c.not_visually_confirmable && " · not visually confirmable"}
           </p>
         </div>
 
         <div className="panel-quiet p-3.5">
-          <p className="eyebrow flex items-center gap-1.5 text-confirmed">
-            <Link className="h-3.5 w-3.5" />
-            Corroborated — independent
+          <p className="eyebrow flex items-center gap-1.5 mb-2" style={{ color: "#38a832" }}>
+            <Link className="h-3 w-3" />
+            CORROBORATION
           </p>
           {finding.corroboration.length > 0 ? (
-            <ul className="mt-2 space-y-2">
+            <ul className="space-y-2">
               {finding.corroboration.map((x, i) => (
-                <li key={i} className="text-sm leading-relaxed text-gray-500">
-                  <span className="font-medium text-gray-900">{x.source}</span>{" "}
-                  <span className="text-gray-500">{x.reference}</span>
+                <li key={i} style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#1a1f3d", lineHeight: 1.4 }}>
+                  <span style={{ fontWeight: "bold" }}>{x.source}</span>{" "}
+                  <span style={{ color: "#3a3f60" }}>{x.reference}</span>
                   {x.excerpt && (
-                    <span className="mt-0.5 block border-l-2 border-gray-200 pl-2 text-gray-500">
+                    <span style={{ display: "block", borderLeft: "3px solid #2c3060", paddingLeft: 8, marginTop: 4, color: "#6070a0" }}>
                       {x.excerpt}
                     </span>
                   )}
@@ -77,14 +74,13 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-gray-500">
-              No independent record matched yet — flagged as a candidate.
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#6070a0" }}>
+              No independent record matched — flagged for review.
             </p>
           )}
           {finding.crash_count_intersection != null && (
-            <p className="mt-2 font-mono text-[11px] text-gray-500">
-              {finding.crash_count_intersection} crashes at intersection · attribution shown at
-              source precision
+            <p className="mt-2" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
+              {finding.crash_count_intersection} crashes at intersection
             </p>
           )}
         </div>
@@ -92,35 +88,34 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
 
       {/* Candidate fix */}
       {iv && (
-        <div className="rounded-xl border border-brand/20 bg-brand/[0.06] p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-brand-soft">
-              <Sparkles className="h-4 w-4" />
-              Candidate fix
+        <div className="p-4" style={{ border: "3px solid #e8c000", background: "rgba(232,192,0,0.08)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <p className="eyebrow flex items-center gap-1.5" style={{ color: "#e8c000" }}>
+              <Sparkles className="h-3 w-3" />
+              ▶ RECOMMENDED FIX
             </p>
             {cost && (
-              <span className="rounded-md bg-white px-2 py-1 font-mono text-xs text-gray-900">
+              <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, background: "#f0ece0", border: "2px solid #2c3060", padding: "4px 8px", color: "#1a1f3d" }}>
                 {cost}
               </span>
             )}
           </div>
-          <p className="mt-2 text-sm font-medium text-gray-900">{iv.name}</p>
-          <p className="mt-1 text-sm leading-relaxed text-gray-500">{iv.evidence}</p>
+          <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#1a1f3d", marginBottom: 8 }}>{iv.name}</p>
+          <p style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#3a3f60", lineHeight: 1.4 }}>{iv.evidence}</p>
 
           {iv.feasibility_caveat && (
-            <p className="mt-2.5 text-xs leading-relaxed text-gray-500">
-              <span className="font-semibold text-gray-500">Feasibility:</span>{" "}
-              {iv.feasibility_caveat}
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#6070a0", marginTop: 8 }}>
+              Feasibility: {iv.feasibility_caveat}
             </p>
           )}
 
           {iv.funding_program_keys.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Banknote className="h-4 w-4 text-confirmed" />
+              <Banknote className="h-4 w-4" style={{ color: "#38a832" }} />
               {iv.funding_program_keys.map((k) => (
                 <span
                   key={k}
-                  className="rounded-md border border-confirmed/25 bg-confirmed/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-confirmed"
+                  style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, border: "2px solid #38a832", background: "rgba(56,168,50,0.1)", padding: "3px 8px", color: "#38a832" }}
                 >
                   {k}
                 </span>
@@ -129,7 +124,7 @@ export default function MarkerDetail({ finding, index }: { finding: Finding; ind
           )}
 
           {iv.disclaimer && (
-            <p className="mt-3 border-t border-gray-200 pt-2.5 text-[11px] italic leading-relaxed text-gray-500">
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#6070a0", marginTop: 10, borderTop: "2px solid #2c3060", paddingTop: 8, fontStyle: "italic" }}>
               {iv.disclaimer}
             </p>
           )}

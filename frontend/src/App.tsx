@@ -11,36 +11,33 @@ export default function App() {
   if (!selected) return <MapView onSelect={setSelected} />;
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f4ef" }}>
-      <header className="sticky top-0 z-30 border-b border-[#d4d0c8] bg-white">
+    <div className="min-h-screen" style={{ background: "#1a1f3d" }}>
+      <header className="sticky top-0 z-30" style={{ background: "#0f1428", borderBottom: "4px solid #2c3060" }}>
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-5 py-3">
-          <button
-            onClick={() => setSelected(null)}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <span className="grid h-7 w-7 place-items-center bg-amber-100 text-amber-600" style={{ borderRadius: 2 }}>
-              <ShieldPin className="h-4 w-4" />
+          <button onClick={() => setSelected(null)} className="flex items-center gap-3 cursor-pointer">
+            <span className="grid h-8 w-8 place-items-center" style={{ background: "#e8c000", border: "2px solid #b89000" }}>
+              <ShieldPin className="h-4 w-4" style={{ color: "#1a1f3d" }} />
             </span>
-            <span className="text-base font-bold tracking-tight text-gray-900">
-              Safe<span className="text-amber-600">Streets</span>
+            <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 10, color: "#f0ece0", letterSpacing: "0.05em" }}>
+              SAFE<span style={{ color: "#e8c000" }}>STREETS</span>
             </span>
           </button>
 
-          <span className="hidden items-center gap-1.5 border border-[#d4d0c8] bg-[#faf9f6] px-2.5 py-1 text-xs text-gray-500 md:inline-flex font-mono" style={{ borderRadius: 2 }}>
-            <MapPin className="h-3 w-3 text-gray-400" />
+          <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1" style={{ border: "2px solid #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
+            <MapPin className="h-3 w-3" />
             {selected.lat.toFixed(4)}, {selected.lng.toFixed(4)}
           </span>
 
-          <button onClick={() => setSelected(null)} className="btn-ghost ml-auto px-3 py-1.5 text-xs">
-            <Search className="h-3.5 w-3.5" />
-            New search
+          <button onClick={() => setSelected(null)} className="btn-ghost ml-auto" style={{ fontSize: 8, padding: "8px 12px" }}>
+            <Search className="h-3 w-3" />
+            NEW SEARCH
           </button>
         </div>
       </header>
 
       <main
         key={`${selected.lat},${selected.lng}`}
-        className="mx-auto max-w-4xl space-y-4 px-5 py-5"
+        className="mx-auto max-w-4xl space-y-5 px-5 py-6"
       >
         <AnnotatedImage lat={selected.lat} lng={selected.lng} />
         <BeforeAfterPanel lat={selected.lat} lng={selected.lng} />

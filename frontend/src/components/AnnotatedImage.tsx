@@ -47,22 +47,21 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
   return (
     <section className="panel overflow-hidden">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" style={{ borderBottom: "3px solid #2c3060" }}>
         <div>
           <p className="eyebrow flex items-center gap-1.5">
-            <Eye className="h-3.5 w-3.5 text-brand" />
-            The deliverable · grounded on the real street
+            <Eye className="h-3 w-3" style={{ color: "#e8c000" }} />
+            ▶ STREET ANALYSIS RESULT
           </p>
-          <h2 className="mt-1 flex items-center gap-2 text-[15px] font-semibold text-gray-900">
-            <MapPin className="h-4 w-4 text-gray-500" />
-            {result?.intersection.address ??
-              `${lat.toFixed(4)}, ${lng.toFixed(4)}`}
+          <h2 className="mt-2 flex items-center gap-2" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#1a1f3d" }}>
+            <MapPin className="h-4 w-4" style={{ color: "#6070a0" }} />
+            {result?.intersection.address ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`}
           </h2>
         </div>
         {captureDate && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-[11px] text-gray-500">
-            <Camera className="h-3.5 w-3.5" />
-            imagery {captureDate}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5" style={{ border: "2px solid #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
+            <Camera className="h-3 w-3" />
+            {captureDate}
           </span>
         )}
       </div>
@@ -135,15 +134,15 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500">
-          <Legend color="bg-green-500" label="Corroborated — independently verified" />
-          <Legend color="bg-amber-400" label="Not corroborated — flagged, needs review" />
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Legend color="bg-green-500" label="CORROBORATED" />
+          <Legend color="bg-yellow-400" label="NOT CORROBORATED" />
         </div>
       </div>
 
       {/* Selected finding detail */}
       {open !== null && result && (
-        <div className="border-t border-gray-200 p-5">
+        <div className="p-5" style={{ borderTop: "3px solid #2c3060" }}>
           <MarkerDetail finding={result.findings[open]} index={open + 1} />
         </div>
       )}
@@ -160,8 +159,8 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2">
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+    <span className="inline-flex items-center gap-2" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#3a3f60" }}>
+      <span className={`h-3 w-3 ${color}`} style={{ display: "inline-block" }} />
       {label}
     </span>
   );

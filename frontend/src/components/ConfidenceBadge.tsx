@@ -37,11 +37,20 @@ export default function ConfidenceBadge({
   size?: "sm" | "md";
 }) {
   const m = META[status];
+  const isConfirmed = status === "CONFIRMED";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border font-mono font-semibold tracking-wide ${m.ring} ${m.text} ${
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"
-      }`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        border: `2px solid ${isConfirmed ? "#38a832" : "#e8c000"}`,
+        background: isConfirmed ? "rgba(56,168,50,0.12)" : "rgba(232,192,0,0.12)",
+        color: isConfirmed ? "#38a832" : "#b89000",
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: size === "sm" ? 6 : 7,
+        padding: "3px 8px",
+      }}
     >
       <m.Icon className="h-3 w-3" />
       {m.label}

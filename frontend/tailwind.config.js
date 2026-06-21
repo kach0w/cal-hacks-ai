@@ -5,30 +5,27 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Georgia", '"Times New Roman"', "serif"],
-        mono: ['"Fira Code"', "Menlo", "ui-monospace", "monospace"],
-        serif: ["Georgia", '"Times New Roman"', "serif"],
+        sans: ['"VT323"', "monospace"],
+        mono: ['"Press Start 2P"', "monospace"],
+        pixel: ['"Press Start 2P"', "monospace"],
       },
       colors: {
-        // Ink layers — OLED-leaning dark surfaces
-        ink: {
-          950: "#020617",
-          900: "#0B1220",
-          850: "#0F172A",
-          800: "#1E293B",
-          700: "#293548",
-        },
-        // Advocacy accent — road-sign amber
         brand: {
-          DEFAULT: "#F59E0B",
-          soft: "#FBBF24",
-          deep: "#B45309",
+          DEFAULT: "#e8c000",
+          soft: "#f8d800",
+          deep: "#b89000",
         },
-        // Confidence semantics
-        confirmed: "#22C55E",
-        candidate: "#F59E0B",
-        reported: "#38BDF8",
-        signal: "#F43F5E",
+        confirmed: "#38a832",
+        candidate: "#e8c000",
+        reported: "#e8c000",
+        signal: "#e84040",
+        poke: {
+          bg: "#1a1f3d",
+          panel: "#f0ece0",
+          border: "#2c3060",
+          dark: "#0f1428",
+          blue: "#3060c8",
+        },
       },
       boxShadow: {
         glow: "0 0 0 1px rgba(245,158,11,0.25), 0 8px 40px -8px rgba(245,158,11,0.35)",

@@ -1,37 +1,13 @@
 import { useState } from "react";
 import MapboxMap from "./MapboxMap";
 import { forwardGeocode, reverseGeocode, MAPBOX_ENABLED, type GeoPlace } from "../lib/mapbox";
-import { ShieldPin, Search, Eye, Link, Megaphone, ArrowRight, MapPin } from "./icons";
-
-/**
- * Entry point — the selector, NOT the deliverable. A live 3D Mapbox map is the
- * centerpiece: click an intersection (reverse-geocoded) or search an address
- * (forward-geocoded), then send it into the analysis pipeline.
- */
+import { ShieldPin, Search, ArrowRight, MapPin } from "./icons";
 
 const DEMO: GeoPlace = {
   lat: 37.7706,
   lng: -122.2215,
   label: "International Blvd & 35th Ave, Oakland, CA",
 };
-
-const SIGNALS = [
-  {
-    Icon: Eye,
-    title: "Grounded, not generated",
-    body: "Every marker sits on the real satellite & Street View — traceable to a visual observation and an independent record.",
-  },
-  {
-    Icon: Search,
-    title: "Honest by design",
-    body: "Vision runs blind to the complaints first, then corroboration is matched separately. Two genuinely independent signals.",
-  },
-  {
-    Icon: Link,
-    title: "It closes the loop",
-    body: "Diagnosis wires straight into the ask, the grant, the official to email, and proof the city already knew.",
-  },
-];
 
 export default function MapView({
   onSelect,
@@ -47,60 +23,61 @@ export default function MapView({
     e.preventDefault();
     const parts = coords.split(",").map((s) => parseFloat(s.trim()));
     if (parts.length !== 2 || parts.some(isNaN)) {
-      setError("Paste as: lat, lng — e.g. 37.86870, -122.25917");
+      setError("Enter as: lat, lng");
       return;
     }
     setError(null);
     onSelect({ lat: parts[0], lng: parts[1] });
   }
 
-  // Map click: drop the pin immediately, then fill in the address label.
   async function handlePick(lng: number, lat: number) {
     setError(null);
-    setPicked({ lng, lat, label: "Locating address…" });
+    setPicked({ lng, lat, label: "Locating…" });
     const label = await reverseGeocode(lng, lat).catch(() => null);
     setPicked({ lng, lat, label: label ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}` });
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto flex max-w-6xl flex-col px-6 pb-24 pt-8">
+    <div className="min-h-screen bg-dots" style={{ background: "#1a1f3d" }}>
+      <div className="mx-auto flex max-w-5xl flex-col px-6 pb-24 pt-8">
+
         {/* Top bar */}
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-brand/30">
-              <ShieldPin className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center" style={{ background: "#e8c000", border: "3px solid #b89000" }}>
+              <ShieldPin className="h-5 w-5" style={{ color: "#1a1f3d" }} />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight text-gray-900">
-              Safe<span className="text-brand">Streets</span>
+            <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 11, color: "#f0ece0" }}>
+              SAFE<span style={{ color: "#e8c000" }}>STREETS</span>
             </span>
           </div>
-          <span className="hidden items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 sm:inline-flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-confirmed animate-blink" />
-            Multi-agent street analysis · live
+          <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5" style={{ border: "2px solid #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0" }}>
+            <span className="h-1.5 w-1.5 animate-blink" style={{ background: "#38a832", display: "inline-block" }} />
+            LIVE · MULTI-AGENT
           </span>
         </header>
 
         {/* Hero */}
-        <section className="mx-auto mt-16 max-w-3xl text-center">
-          <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
-            <Megaphone className="h-3.5 w-3.5 text-brand" />
-            Advocacy infrastructure for safer streets
-          </span>
-          <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-gray-900 sm:text-6xl">
-            See the street.
-            <br />
-            Name the fix. <span className="text-amber-500">Move the city.</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-gray-500 sm:text-lg">
-            Pick an intersection. SafeStreets reads the actual street, tells you exactly what's
-            physically wrong, and hands you the ask, the grant, the official — and the record the
-            city can't quietly bury.
-          </p>
+        <section className="mx-auto mt-14 max-w-3xl text-center">
+          {/* Pokemon-style dialogue box title */}
+          <div className="mx-auto mb-8 max-w-2xl p-6 text-left" style={{ background: "#f0ece0", border: "4px solid #2c3060", boxShadow: "6px 6px 0 #0f1428", color: "#1a1f3d" }}>
+            <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#6070a0", marginBottom: 12 }}>
+              ▶ SAFESTREETS used ANALYZE!
+            </p>
+            <h1 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 14, lineHeight: 1.8, color: "#1a1f3d" }}>
+              SEE THE STREET.<br />
+              NAME THE FIX.<br />
+              <span style={{ color: "#e8c000" }}>MOVE THE CITY.</span>
+            </h1>
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 20, marginTop: 14, color: "#3a3f60", lineHeight: 1.5 }}>
+              Pick an intersection. SafeStreets reads the real street, names what's wrong,
+              and generates the ask, the grant, and the record the city can't quietly bury.
+            </p>
+          </div>
 
           {/* Search */}
           <form
-            className="mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-2.5 sm:flex-row"
+            className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-3 sm:flex-row"
             onSubmit={handleSearch}
           >
             <div className="relative flex-1">
@@ -108,28 +85,54 @@ export default function MapView({
                 value={coords}
                 onChange={(e) => setCoords(e.target.value)}
                 placeholder={DEMO_COORDS}
-                className="w-full rounded-xl border border-gray-200 bg-white py-3.5 px-4 text-[15px] text-gray-900 placeholder:text-gray-400 transition-colors focus:border-amber-400 focus:outline-none"
+                style={{
+                  width: "100%",
+                  background: "#f0ece0",
+                  border: "3px solid #2c3060",
+                  color: "#1a1f3d",
+                  fontFamily: '"Press Start 2P", monospace',
+                  fontSize: 8,
+                  padding: "14px 12px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
               />
               {!coords && (
                 <button
                   type="button"
                   onClick={() => setCoords(DEMO_COORDS)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-500 hover:bg-gray-200"
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "#e8c000",
+                    border: "2px solid #b89000",
+                    color: "#1a1f3d",
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: 7,
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                  }}
                 >
-                  Use demo
+                  DEMO
                 </button>
               )}
             </div>
-            <button type="submit" className="btn-primary py-3.5">
-              Analyze <ArrowRight className="h-4 w-4" />
+            <button type="submit" className="btn-primary">
+              SCAN <ArrowRight className="h-4 w-4" />
             </button>
           </form>
-          {error && <p className="mt-3 text-sm text-signal">{error}</p>}
+          {error && (
+            <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#e84040", marginTop: 10 }}>
+              ✗ {error}
+            </p>
+          )}
         </section>
 
-        {/* Live 3D map */}
-        <section className="mt-10">
-          <div className="panel relative overflow-hidden">
+        {/* Map */}
+        <section className="mt-8">
+          <div style={{ border: "4px solid #2c3060", boxShadow: "6px 6px 0 #0f1428", position: "relative", overflow: "hidden" }}>
             {MAPBOX_ENABLED ? (
               <>
                 <MapboxMap
@@ -138,22 +141,23 @@ export default function MapView({
                   onPick={handlePick}
                   className="h-[460px] w-full sm:h-[520px]"
                 />
-                {/* Hint */}
-                <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-500 backdrop-blur">
-                  <MapPin className="h-3.5 w-3.5 text-brand" />
-                  Click any intersection to select it
+                <div
+                  className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-2 px-3 py-1.5"
+                  style={{ background: "#f0ece0", border: "2px solid #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#3a3f60" }}
+                >
+                  <MapPin className="h-3 w-3" style={{ color: "#e8c000" }} />
+                  CLICK INTERSECTION
                 </div>
 
-                {/* Picked action card */}
                 {picked && (
-                  <div className="absolute inset-x-4 bottom-4 mx-auto max-w-lg animate-fade-up rounded-xl border border-gray-200 bg-white p-4 backdrop-blur-xl">
+                  <div className="absolute inset-x-3 bottom-3 mx-auto max-w-lg animate-fade-up p-4" style={{ background: "#f0ece0", border: "3px solid #2c3060", boxShadow: "4px 4px 0 #0f1428" }}>
                     <div className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand/15 text-brand ring-1 ring-brand/30">
-                        <MapPin className="h-5 w-5" />
+                      <span className="grid h-10 w-10 shrink-0 place-items-center" style={{ background: "#e8c000", border: "2px solid #b89000" }}>
+                        <MapPin className="h-5 w-5" style={{ color: "#1a1f3d" }} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-gray-900">{picked.label}</p>
-                        <p className="font-mono text-[11px] text-gray-500">
+                        <p className="truncate" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>{picked.label}</p>
+                        <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#6070a0", marginTop: 2 }}>
                           {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)}
                         </p>
                       </div>
@@ -161,30 +165,26 @@ export default function MapView({
                         className="btn-primary shrink-0"
                         onClick={() => onSelect({ lat: picked.lat, lng: picked.lng })}
                       >
-                        Analyze
-                        <ArrowRight className="h-4 w-4" />
+                        SCAN <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                 )}
               </>
             ) : (
-              // Graceful fallback when no token is configured.
-              <div className="flex h-[420px] flex-col items-center justify-center gap-4 bg-dots p-6 text-center">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand/10 text-brand ring-1 ring-brand/20">
-                  <MapPin className="h-6 w-6" />
+              <div className="flex h-[420px] flex-col items-center justify-center gap-5 p-6 text-center bg-dots">
+                <span className="grid h-14 w-14 place-items-center" style={{ background: "#e8c000", border: "3px solid #b89000" }}>
+                  <MapPin className="h-7 w-7" style={{ color: "#1a1f3d" }} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Map needs a Mapbox token</p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Add <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">VITE_MAPBOX_TOKEN</code>{" "}
-                    to <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">frontend/.env</code> to
-                    enable the live 3D map.
+                  <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 9, color: "#f0ece0" }}>MAP TOKEN NEEDED</p>
+                  <p style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#6070a0", marginTop: 8 }}>
+                    Add VITE_MAPBOX_TOKEN to frontend/.env
                   </p>
                 </div>
                 <button className="btn-ghost" onClick={() => onSelect({ lat: DEMO.lat, lng: DEMO.lng })}>
                   <MapPin className="h-4 w-4" />
-                  Continue with the demo intersection
+                  USE DEMO INTERSECTION
                 </button>
               </div>
             )}
@@ -193,29 +193,31 @@ export default function MapView({
           {MAPBOX_ENABLED && (
             <button
               onClick={() => setPicked(DEMO)}
-              className="group mx-auto mt-4 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-brand cursor-pointer"
+              className="mx-auto mt-4 flex items-center gap-2 cursor-pointer"
+              style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", background: "none", border: "none" }}
             >
-              <MapPin className="h-4 w-4" />
-              Or jump to the demo intersection
-              <span className="text-gray-500 transition-transform group-hover:translate-x-0.5">↗</span>
+              <MapPin className="h-3 w-3" />
+              or jump to demo intersection ↗
             </button>
           )}
         </section>
 
-        {/* Trust signals */}
-        <section className="mt-20 grid gap-4 sm:grid-cols-3">
-          {SIGNALS.map((s, i) => (
-            <article
+        {/* Feature pills */}
+        <section className="mt-12 grid gap-4 sm:grid-cols-3">
+          {[
+            { icon: "👁", title: "GROUNDED", body: "Every marker sits on real satellite + Street View imagery" },
+            { icon: "🔗", title: "HONEST", body: "Vision runs blind first, then corroboration matched separately" },
+            { icon: "📋", title: "ACTIONABLE", body: "Diagnosis wires straight into the ask, grant, and official to email" },
+          ].map((s, i) => (
+            <div
               key={s.title}
-              className="panel group p-5 transition-colors hover:border-gray-300 animate-fade-up"
-              style={{ animationDelay: `${i * 90}ms` }}
+              className="p-5 animate-fade-up"
+              style={{ background: "#f0ece0", border: "3px solid #2c3060", boxShadow: "4px 4px 0 #0f1428", color: "#1a1f3d", animationDelay: `${i * 80}ms` }}
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand ring-1 ring-brand/20 transition-colors group-hover:bg-brand/15">
-                <s.Icon className="h-5 w-5" />
-              </span>
-              <h3 className="mt-4 text-sm font-semibold text-gray-900">{s.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{s.body}</p>
-            </article>
+              <div style={{ fontSize: 28 }}>{s.icon}</div>
+              <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, marginTop: 12, marginBottom: 8 }}>{s.title}</h3>
+              <p style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#3a3f60", lineHeight: 1.4 }}>{s.body}</p>
+            </div>
           ))}
         </section>
       </div>

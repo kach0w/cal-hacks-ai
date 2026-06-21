@@ -19,38 +19,38 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 
   return (
     <section className="panel overflow-hidden">
-      <div className="border-b border-[#d4d0c8] px-5 py-4">
-        <h2 className="text-base font-bold text-gray-900">Take action</h2>
-        <p className="mt-0.5 text-sm text-gray-500">Ready-to-use outputs from the analysis</p>
+      <div className="px-5 py-4" style={{ borderBottom: "3px solid #2c3060" }}>
+        <h2 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 10, color: "#1a1f3d" }}>▶ TAKE ACTION</h2>
+        <p className="mt-1" style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#6070a0" }}>Ready-to-use outputs from the analysis</p>
       </div>
 
-      <div className="grid gap-0 divide-y divide-[#d4d0c8] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+      <div className="grid gap-0 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0" style={{ borderColor: "#2c3060" }}>
         {/* Social post */}
         <div className="p-5">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center bg-sky-50 text-sky-600" style={{ borderRadius: 2 }}>
-              <Megaphone className="h-3.5 w-3.5" />
+            <span className="grid h-7 w-7 place-items-center" style={{ background: "#daeeff", border: "2px solid #2c3060" }}>
+              <Megaphone className="h-3.5 w-3.5" style={{ color: "#3060c8" }} />
             </span>
-            <h3 className="text-sm font-bold text-gray-900">Social media post</h3>
+            <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>SOCIAL POST</h3>
           </div>
 
           {result.social_post ? (
             <>
-              <div className="min-h-[140px] border border-[#d4d0c8] bg-[#faf9f6] p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ borderRadius: 2 }}>
+              <div className="min-h-[140px] p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5 }}>
                 {result.social_post}
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(result.social_post!)}
-                className="mt-3 inline-flex items-center gap-1.5 border border-[#d4d0c8] bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                style={{ borderRadius: 2 }}
+                className="btn-ghost mt-3"
+                style={{ fontSize: 8, padding: "8px 12px" }}
               >
                 <Copy className="h-3 w-3" />
-                Copy to clipboard
+                COPY
               </button>
             </>
           ) : (
-            <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[#d4d0c8] text-sm text-gray-400" style={{ borderRadius: 2 }}>
-              Generating…
+            <div className="flex min-h-[140px] items-center justify-center" style={{ border: "2px dashed #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#6070a0" }}>
+              GENERATING…
             </div>
           )}
         </div>
@@ -58,10 +58,10 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
         {/* Council report */}
         <div className="p-5">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center bg-amber-50 text-amber-600" style={{ borderRadius: 2 }}>
-              <FileText className="h-3.5 w-3.5" />
+            <span className="grid h-7 w-7 place-items-center" style={{ background: "#fff8d0", border: "2px solid #b89000" }}>
+              <FileText className="h-3.5 w-3.5" style={{ color: "#b89000" }} />
             </span>
-            <h3 className="text-sm font-bold text-gray-900">Council letter</h3>
+            <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>COUNCIL LETTER</h3>
           </div>
 
           {result.council_report ? (
