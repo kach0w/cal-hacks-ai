@@ -4,6 +4,7 @@ last-mile -> render. This is the function both the HTTP API and the uAgent call.
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 from typing import Any
 
@@ -59,6 +60,18 @@ async def analyze(
         accountability=await accountability.build_log(intersection.id, community_data),
         coalition_count=await coalition.count(intersection.id),
     )
+
+    # Fetch satellite image server-side (API key is restricted to server)
+    sat = intersection.satellite()
+    if sat:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=15) as http:
+                r = await http.get(sat.url)
+                r.raise_for_status()
+            result.annotated_image_url = "data:image/jpeg;base64," + base64.b64encode(r.content).decode()
+        except Exception:
+            log.warning("Could not fetch satellite image")
 
     # Stage 4: social post + council letter (single Claude call)
     try:
