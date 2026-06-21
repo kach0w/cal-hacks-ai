@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useIntersection } from "../hooks/useIntersection";
-import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp } from "./icons";
+import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart } from "./icons";
 
 export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }) {
   const { result, loading } = useIntersection(lat, lng);
@@ -25,31 +25,19 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
       </div>
 
       <div className="grid gap-0 sm:grid-cols-2" style={{ borderColor: "#2c3060", borderTop: "3px solid #2c3060" }}>
-        {/* Social post */}
+        {/* Social post — tweet card */}
         <div className="p-5" style={{ borderRight: "3px solid #2c3060" }}>
           <div className="mb-3 flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center" style={{ background: "#daeeff", border: "2px solid #2c3060" }}>
               <Megaphone className="h-3.5 w-3.5" style={{ color: "#3060c8" }} />
             </span>
-            <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>SOCIAL POST</h3>
+            <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>TWEET</h3>
           </div>
 
           {result.social_post ? (
-            <>
-              <div className="p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5, height: 300, overflowY: "auto" }}>
-                {result.social_post}
-              </div>
-              <button
-                onClick={() => navigator.clipboard.writeText(result.social_post!)}
-                className="btn-ghost mt-3"
-                style={{ fontSize: 8, padding: "8px 12px" }}
-              >
-                <Copy className="h-3 w-3" />
-                COPY
-              </button>
-            </>
+            <TweetCard text={result.social_post} />
           ) : (
-            <div className="flex min-h-[140px] items-center justify-center" style={{ border: "2px dashed #2c3060", fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#6070a0" }}>
+            <div className="flex items-center justify-center" style={{ border: "2px dashed #2c3060", height: 300, fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#6070a0" }}>
               GENERATING…
             </div>
           )}
@@ -86,7 +74,7 @@ function CouncilReport({ report }: { report: string }) {
     const paras = report.split(/\n\n+/).filter(Boolean);
     const html = paras.map(p => `<p>${p.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>")}</p>`).join("\n");
     const w = window.open("", "_blank")!;
-    w.document.write(`<!DOCTYPE html><html><head><title>Streets of Berkeley Council Letter</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>SafeStreets Council Letter</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   body { background: #e8e4d4; color: #1a1f3d; font-family: "Press Start 2P", monospace; font-size: 11px; line-height: 2; margin: 0; padding: 0; }
@@ -99,7 +87,7 @@ function CouncilReport({ report }: { report: string }) {
   }
 </style></head>
 <body><div class="page">
-<div class="header">▶ STREETS OF BERKELEY — COUNCIL LETTER</div>
+<div class="header">▶ SAFESTREETS — COUNCIL LETTER</div>
 ${html}
 </div></body></html>`);
     w.document.close();
@@ -146,5 +134,80 @@ ${html}
         </button>
       </div>
     </>
+  );
+}
+
+function TweetCard({ text }: { text: string }) {
+  const [retweeted, setRetweeted] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [rtCount, setRtCount] = useState(47);
+  const [likeCount, setLikeCount] = useState(112);
+
+  function handleRetweet() {
+    setRetweeted(!retweeted);
+    setRtCount(c => retweeted ? c - 1 : c + 1);
+  }
+  function handleLike() {
+    setLiked(!liked);
+    setLikeCount(c => liked ? c - 1 : c + 1);
+  }
+  function handleShare() {
+    const encoded = encodeURIComponent(text);
+    window.open(`https://twitter.com/intent/tweet?text=${encoded}`, "_blank");
+  }
+
+  return (
+    <div style={{ border: "3px solid #2c3060", background: "#e8e4d4", height: 300, display: "flex", flexDirection: "column" }}>
+      {/* Tweet header */}
+      <div style={{ padding: "12px 14px 8px", borderBottom: "2px solid #2c3060", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, background: "#1a1f3d", border: "2px solid #2c3060", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#e8c000" }}>SS</span>
+        </div>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#1a1f3d" }}>SafeStreets</div>
+          <div style={{ fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>@safestreets_ai</div>
+        </div>
+        <div style={{ marginLeft: "auto", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#3060c8", background: "#daeeff", border: "2px solid #3060c8", padding: "3px 8px" }}>
+          𝕏
+        </div>
+      </div>
+
+      {/* Tweet body */}
+      <div style={{ flex: 1, padding: "12px 14px", overflowY: "auto", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+        {text}
+      </div>
+
+      {/* Tweet actions */}
+      <div style={{ borderTop: "2px solid #2c3060", padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+        <button
+          onClick={handleRetweet}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: retweeted ? "#38a832" : "#6070a0", padding: "4px 6px" }}
+        >
+          <Retweet className="h-3 w-3" />
+          {rtCount}
+        </button>
+        <button
+          onClick={handleLike}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: liked ? "#e84040" : "#6070a0", padding: "4px 6px" }}
+        >
+          <Heart className="h-3 w-3" />
+          {likeCount}
+        </button>
+        <button
+          onClick={() => navigator.clipboard.writeText(text)}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", padding: "4px 6px" }}
+        >
+          <Copy className="h-3 w-3" />
+          COPY
+        </button>
+        <button
+          onClick={handleShare}
+          className="btn-primary"
+          style={{ marginLeft: "auto", fontSize: 7, padding: "5px 10px" }}
+        >
+          POST →
+        </button>
+      </div>
+    </div>
   );
 }

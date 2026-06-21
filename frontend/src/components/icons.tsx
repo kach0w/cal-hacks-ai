@@ -184,6 +184,21 @@ export const FileText = (p: IconProps) => (
   </Base>
 );
 
+export const Retweet = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M17 1l4 4-4 4" />
+    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+    <path d="M7 23l-4-4 4-4" />
+    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+  </Base>
+);
+
+export const Heart = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </Base>
+);
+
 export const Printer = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9V2h12v7" />
