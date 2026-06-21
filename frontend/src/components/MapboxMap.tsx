@@ -38,23 +38,33 @@ export default function MapboxMap({ picked, onPick, className }: Props) {
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right");
 
+    // General click — check intersection dots first, fall back to raw coords
     map.on("click", (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: ["alameda-intersections"] });
-      if (features.length) {
-        const f = features[0];
-        const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+      const dotFeatures = map.queryRenderedFeatures(e.point, { layers: ["alameda-intersections"] });
+      const clusterFeatures = map.queryRenderedFeatures(e.point, { layers: ["alameda-clusters"] });
+
+      if (clusterFeatures.length) {
+        const clusterId = clusterFeatures[0].properties!.cluster_id;
+        (map.getSource("alameda-intersections") as mapboxgl.GeoJSONSource)
+          .getClusterExpansionZoom(clusterId, (err, z) => {
+            if (err || z == null) return;
+            map.easeTo({
+              center: (clusterFeatures[0].geometry as GeoJSON.Point).coordinates as [number, number],
+              zoom: z,
+            });
+          });
+      } else if (dotFeatures.length) {
+        const coords = (dotFeatures[0].geometry as GeoJSON.Point).coordinates as [number, number];
         onPickRef.current(coords[0], coords[1]);
       } else {
         onPickRef.current(e.lngLat.lng, e.lngLat.lat);
       }
     });
 
-    map.on("mouseenter", "alameda-intersections", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", "alameda-intersections", () => {
-      map.getCanvas().style.cursor = "";
-    });
+    map.on("mouseenter", "alameda-intersections", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "alameda-intersections", () => { map.getCanvas().style.cursor = ""; });
+    map.on("mouseenter", "alameda-clusters", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "alameda-clusters", () => { map.getCanvas().style.cursor = ""; });
 
     map.on("style.load", () => {
       try {
@@ -134,20 +144,6 @@ export default function MapboxMap({ picked, onPick, className }: Props) {
             },
           });
 
-          // Expand cluster on click
-          map.on("click", "alameda-clusters", (e) => {
-            const features = map.queryRenderedFeatures(e.point, { layers: ["alameda-clusters"] });
-            if (!features.length) return;
-            const clusterId = features[0].properties!.cluster_id;
-            (map.getSource("alameda-intersections") as mapboxgl.GeoJSONSource)
-              .getClusterExpansionZoom(clusterId, (err, z) => {
-                if (err || z == null) return;
-                map.easeTo({
-                  center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-                  zoom: z,
-                });
-              });
-          });
         })
         .catch((e) => console.warn("Could not load alameda intersections:", e));
     });

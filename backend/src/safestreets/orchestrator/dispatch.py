@@ -49,20 +49,17 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         streets = []
     yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
 
-    # Per-intersection data is the GEO-filtered hard evidence only: imagery, crashes,
-    # 311. City-wide news + council street-safety coverage lives in the civic key
-    # (ss:civic:<city>:street-safety), scraped once for the whole city — not per corner.
-    yield {"agent": "images", "msg": "satellite + street view"}
-    images = await _with_retry(lambda: image_fetcher.fetch_images(lat, lng)) or []
-    yield {"agent": "images", "msg": "done", "count": len(images)}
+    # Run images, crash records, and 311 in parallel — they're all independent network calls.
+    yield {"agent": "orchestrator", "msg": "fetching images + crash + 311 in parallel"}
+    images_task = asyncio.ensure_future(_with_retry(lambda: image_fetcher.fetch_images(lat, lng)))
+    crash_task  = asyncio.ensure_future(_with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)))
+    compl_task  = asyncio.ensure_future(_with_retry(lambda: council_311_agent.fetch_311(lat, lng)))
 
-    yield {"agent": "structured", "msg": "crash records"}
-    crash = await _with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)) or []
-    yield {"agent": "structured", "msg": "done", "count": len(crash)}
-
-    yield {"agent": "complaints_311", "msg": "311 complaints"}
-    complaints = await _with_retry(lambda: council_311_agent.fetch_311(lat, lng)) or []
-    yield {"agent": "complaints_311", "msg": "done", "count": len(complaints)}
+    images_raw, crash, complaints = await asyncio.gather(images_task, crash_task, compl_task, return_exceptions=True)
+    images     = images_raw if isinstance(images_raw, list) else []
+    crash      = crash      if isinstance(crash,      list) else []
+    complaints = complaints if isinstance(complaints, list) else []
+    yield {"agent": "orchestrator", "msg": "data ready", "images": len(images), "crashes": len(crash), "complaints": len(complaints)}
 
     data = {
         "images": [img.model_dump(mode="json") for img in images],
