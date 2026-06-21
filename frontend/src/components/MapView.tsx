@@ -77,29 +77,31 @@ export default function MapView({
 
           {/* Search */}
           <form
-            className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-3 sm:flex-row"
+            className="mx-auto mt-6 flex max-w-xl items-stretch"
             onSubmit={handleSearch}
           >
-            <div className="relative flex-1">
-              <input
-                value={coords}
-                onChange={(e) => setCoords(e.target.value)}
-                placeholder={DEMO_COORDS}
-                style={{
-                  width: "100%",
-                  background: "#f0ece0",
-                  border: "3px solid #2c3060",
-                  color: "#1a1f3d",
-                  fontFamily: '"Press Start 2P", monospace',
-                  fontSize: 8,
-                  padding: "14px 12px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-            <button type="submit" className="btn-primary" style={{ padding: "14px 24px", fontSize: 8, letterSpacing: 2, alignSelf: "stretch" }}>
-              SCAN &nbsp;<ArrowRight className="h-4 w-4" />
+            <input
+              value={coords}
+              onChange={(e) => setCoords(e.target.value)}
+              placeholder={DEMO_COORDS}
+              style={{
+                flex: 1,
+                background: "#f0ece0",
+                border: "3px solid #2c3060",
+                borderRight: "none",
+                color: "#1a1f3d",
+                fontFamily: '"Press Start 2P", monospace',
+                fontSize: 8,
+                padding: "14px 12px",
+                outline: "none",
+              }}
+            />
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ padding: "14px 20px", width: 56, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            >
+              <ArrowRight className="h-4 w-4" />
             </button>
           </form>
           {error && (
