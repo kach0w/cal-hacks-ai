@@ -77,7 +77,7 @@ export default function MapView({
 
           {/* Search */}
           <form
-            className="mx-auto mt-6 flex max-w-xl items-stretch"
+            className="mx-auto mt-6 flex max-w-xl items-stretch gap-2"
             onSubmit={handleSearch}
           >
             <input
@@ -88,7 +88,6 @@ export default function MapView({
                 flex: 1,
                 background: "#f0ece0",
                 border: "3px solid #2c3060",
-                borderRight: "none",
                 color: "#1a1f3d",
                 fontFamily: '"Press Start 2P", monospace',
                 fontSize: 8,
@@ -99,9 +98,9 @@ export default function MapView({
             <button
               type="submit"
               className="btn-primary"
-              style={{ padding: "14px 20px", width: 56, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              style={{ padding: "0", width: 46, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "stretch" }}
             >
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </form>
           {error && (
