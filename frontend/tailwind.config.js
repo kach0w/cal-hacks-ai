@@ -15,9 +15,9 @@ export default {
           soft: "#f8d800",
           deep: "#b89000",
         },
-        confirmed: "#38a832",
-        candidate: "#e8c000",
-        reported: "#e8c000",
+        confirmed: "#e84040",
+        candidate: "#e84040",
+        reported: "#e84040",
         signal: "#e84040",
         poke: {
           bg: "#1a1f3d",

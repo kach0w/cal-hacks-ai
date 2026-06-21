@@ -24,9 +24,9 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
         <p className="mt-1" style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#6070a0" }}>Ready-to-use outputs from the analysis</p>
       </div>
 
-      <div className="grid gap-0 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0" style={{ borderColor: "#2c3060" }}>
+      <div className="grid gap-0 sm:grid-cols-2" style={{ borderColor: "#2c3060", borderTop: "3px solid #2c3060" }}>
         {/* Social post */}
-        <div className="p-5">
+        <div className="p-5" style={{ borderRight: "3px solid #2c3060" }}>
           <div className="mb-3 flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center" style={{ background: "#daeeff", border: "2px solid #2c3060" }}>
               <Megaphone className="h-3.5 w-3.5" style={{ color: "#3060c8" }} />
@@ -36,7 +36,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 
           {result.social_post ? (
             <>
-              <div className="min-h-[140px] p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5 }}>
+              <div className="p-4 whitespace-pre-wrap" style={{ border: "2px solid #2c3060", background: "#e8e4d4", fontFamily: '"VT323", monospace', fontSize: 20, color: "#1a1f3d", lineHeight: 1.5, height: 220, overflowY: "auto" }}>
                 {result.social_post}
               </div>
               <button
@@ -110,10 +110,10 @@ ${html}
     <>
       <div
         style={{
-          border: "3px solid #2c3060",
+          border: "2px solid #2c3060",
           background: "#e8e4d4",
           position: "relative",
-          maxHeight: open ? "none" : 220,
+          height: 220,
           overflow: "hidden",
         }}
       >
