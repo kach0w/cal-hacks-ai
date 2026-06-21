@@ -2,11 +2,7 @@ import type { Finding } from "../types";
 import ConfidenceBadge from "./ConfidenceBadge";
 import { Eye, Link, Sparkles, Banknote, Camera } from "./icons";
 
-const CONFIDENCE_TINT: Record<string, string> = {
-  high: "text-confirmed",
-  medium: "text-candidate",
-  low: "text-gray-500",
-};
+
 
 function money(low: number | null, high: number | null, unit: string) {
   if (low == null && high == null) return null;
