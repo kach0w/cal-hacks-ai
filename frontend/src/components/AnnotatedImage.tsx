@@ -41,20 +41,20 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
   return (
     <section className="panel overflow-hidden">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
         <div>
           <p className="eyebrow flex items-center gap-1.5">
             <Eye className="h-3.5 w-3.5 text-brand" />
             The deliverable · grounded on the real street
           </p>
-          <h2 className="mt-1 flex items-center gap-2 text-[15px] font-semibold text-white">
-            <MapPin className="h-4 w-4 text-slate-400" />
+          <h2 className="mt-1 flex items-center gap-2 text-[15px] font-semibold text-gray-900">
+            <MapPin className="h-4 w-4 text-gray-500" />
             {result?.intersection.address ??
               `${lat.toFixed(4)}, ${lng.toFixed(4)}`}
           </h2>
         </div>
         {captureDate && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[11px] text-slate-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-[11px] text-gray-500">
             <Camera className="h-3.5 w-3.5" />
             imagery {captureDate}
           </span>
@@ -63,7 +63,7 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
       {/* Image stage */}
       <div className="p-5">
-        <div className="relative mx-auto aspect-square w-full max-w-[560px] overflow-hidden rounded-xl border border-white/10 bg-ink-900">
+        <div className="relative mx-auto aspect-square w-full max-w-[560px] overflow-hidden rounded-xl border border-gray-200 bg-white">
           {/* Real image, or a canonical-frame placeholder */}
           {result?.annotated_image_url ? (
             <img
@@ -74,8 +74,8 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
           ) : (
             <div className="absolute inset-0 bg-grid-faint [background-size:32px_32px]">
               {/* Canonical intersection frame: the two legs */}
-              <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-white/[0.04]" />
-              <div className="absolute top-1/2 left-0 h-16 w-full -translate-y-1/2 bg-white/[0.04]" />
+              <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-gray-50" />
+              <div className="absolute top-1/2 left-0 h-16 w-full -translate-y-1/2 bg-gray-50" />
               {loading && (
                 <div className="absolute inset-x-0 top-0 h-24 animate-scan bg-gradient-to-b from-brand/20 to-transparent" />
               )}
@@ -86,7 +86,7 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
           {CORNERS.map((c) => (
             <span
               key={c.label}
-              className={`absolute ${c.pos} rounded-md bg-ink-950/50 px-1.5 py-0.5 font-mono text-[10px] tracking-widest text-slate-500 backdrop-blur-sm`}
+              className={`absolute ${c.pos} rounded-md bg-white px-1.5 py-0.5 font-mono text-[10px] tracking-widest text-gray-500 backdrop-blur-sm`}
             >
               {c.label}
             </span>
@@ -121,7 +121,7 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
           {loading && !result && (
             <div className="absolute inset-0 grid place-items-center">
-              <p className="rounded-lg bg-ink-950/70 px-3 py-1.5 font-mono text-xs text-slate-400 backdrop-blur">
+              <p className="rounded-lg bg-white px-3 py-1.5 font-mono text-xs text-gray-500 backdrop-blur">
                 fetching satellite + Street View…
               </p>
             </div>
@@ -129,7 +129,7 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500">
           <Legend color="bg-confirmed" label="Confirmed — seen & corroborated" />
           <Legend color="bg-candidate" label="Candidate — seen, not yet corroborated" />
           <Legend color="bg-reported" label="Reported — not visually confirmable" />
@@ -138,14 +138,14 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
       {/* Selected finding detail */}
       {open !== null && result && (
-        <div className="border-t border-white/10 p-5">
+        <div className="border-t border-gray-200 p-5">
           <MarkerDetail finding={result.findings[open]} index={open + 1} />
         </div>
       )}
 
       {/* Concept illustration (clearly labeled, secondary) */}
       {result?.concept_image_url && (
-        <div className="border-t border-white/10 p-5">
+        <div className="border-t border-gray-200 p-5">
           <ConceptToggle conceptUrl={result.concept_image_url} />
         </div>
       )}

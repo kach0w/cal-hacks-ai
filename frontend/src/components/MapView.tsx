@@ -38,29 +38,19 @@ export default function MapView({
 }: {
   onSelect: (p: { lat: number; lng: number }) => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [coords, setCoords] = useState("");
   const [picked, setPicked] = useState<GeoPlace | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSearch(e: React.FormEvent) {
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!query.trim()) return;
-    if (!MAPBOX_ENABLED) {
-      setError("Set VITE_MAPBOX_TOKEN to enable address search.");
+    const parts = coords.split(",").map((s) => parseFloat(s.trim()));
+    if (parts.length !== 2 || parts.some(isNaN)) {
+      setError("Paste as: lat, lng — e.g. 37.86870, -122.25917");
       return;
     }
-    setBusy(true);
     setError(null);
-    try {
-      const place = await forwardGeocode(query);
-      if (place) setPicked(place);
-      else setError("No match for that address.");
-    } catch {
-      setError("Geocoding failed. Check the Mapbox token.");
-    } finally {
-      setBusy(false);
-    }
+    onSelect({ lat: parts[0], lng: parts[1] });
   }
 
   // Map click: drop the pin immediately, then fill in the address label.
@@ -72,24 +62,19 @@ export default function MapView({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Ambient backdrop */}
-      <div className="pointer-events-none absolute inset-0 bg-grid-faint [background-size:42px_42px]" />
-      <div className="pointer-events-none absolute inset-0 bg-radial-spot" />
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-brand/10 blur-[140px]" />
-
-      <div className="relative mx-auto flex max-w-6xl flex-col px-6 pb-24 pt-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto flex max-w-6xl flex-col px-6 pb-24 pt-8">
         {/* Top bar */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/15 text-brand ring-1 ring-brand/30">
               <ShieldPin className="h-5 w-5" />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight text-white">
+            <span className="text-[15px] font-semibold tracking-tight text-gray-900">
               Safe<span className="text-brand">Streets</span>
             </span>
           </div>
-          <span className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-400 sm:inline-flex">
+          <span className="hidden items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 sm:inline-flex">
             <span className="h-1.5 w-1.5 rounded-full bg-confirmed animate-blink" />
             Multi-agent street analysis · live
           </span>
@@ -97,16 +82,16 @@ export default function MapView({
 
         {/* Hero */}
         <section className="mx-auto mt-16 max-w-3xl text-center">
-          <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+          <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
             <Megaphone className="h-3.5 w-3.5 text-brand" />
             Advocacy infrastructure for safer streets
           </span>
-          <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl">
+          <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-gray-900 sm:text-6xl">
             See the street.
             <br />
-            Name the fix. <span className="text-brand text-glow">Move the city.</span>
+            Name the fix. <span className="text-amber-500">Move the city.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-slate-400 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-gray-500 sm:text-lg">
             Pick an intersection. SafeStreets reads the actual street, tells you exactly what's
             physically wrong, and hands you the ask, the grant, the official — and the record the
             city can't quietly bury.
@@ -117,22 +102,14 @@ export default function MapView({
             className="mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-2.5 sm:flex-row"
             onSubmit={handleSearch}
           >
-            <label htmlFor="intersection" className="sr-only">
-              Intersection or address
-            </label>
-            <div className="group relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-brand" />
-              <input
-                id="intersection"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. International Blvd & 35th Ave, Oakland"
-                className="w-full rounded-xl border border-white/10 bg-ink-850/70 py-3.5 pl-12 pr-4 text-[15px] text-white placeholder:text-slate-500 backdrop-blur-xl transition-colors focus:border-brand/50"
-              />
-            </div>
-            <button type="submit" className="btn-primary py-3.5" disabled={busy}>
-              {busy ? "Searching…" : "Search"}
-              {!busy && <ArrowRight className="h-4 w-4" />}
+            <input
+              value={coords}
+              onChange={(e) => setCoords(e.target.value)}
+              placeholder="lat, lng — e.g. 37.86870, -122.25917"
+              className="flex-1 rounded-xl border border-gray-200 bg-white py-3.5 px-4 text-[15px] text-gray-900 placeholder:text-gray-500 backdrop-blur-xl transition-colors focus:border-brand/50"
+            />
+            <button type="submit" className="btn-primary py-3.5">
+              Analyze <ArrowRight className="h-4 w-4" />
             </button>
           </form>
           {error && <p className="mt-3 text-sm text-signal">{error}</p>}
@@ -150,21 +127,21 @@ export default function MapView({
                   className="h-[460px] w-full sm:h-[520px]"
                 />
                 {/* Hint */}
-                <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-ink-950/70 px-3 py-1.5 text-xs text-slate-300 backdrop-blur">
+                <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-500 backdrop-blur">
                   <MapPin className="h-3.5 w-3.5 text-brand" />
                   Click any intersection to select it
                 </div>
 
                 {/* Picked action card */}
                 {picked && (
-                  <div className="absolute inset-x-4 bottom-4 mx-auto max-w-lg animate-fade-up rounded-xl border border-white/10 bg-ink-950/85 p-4 backdrop-blur-xl">
+                  <div className="absolute inset-x-4 bottom-4 mx-auto max-w-lg animate-fade-up rounded-xl border border-gray-200 bg-white p-4 backdrop-blur-xl">
                     <div className="flex items-center gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand/15 text-brand ring-1 ring-brand/30">
                         <MapPin className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">{picked.label}</p>
-                        <p className="font-mono text-[11px] text-slate-500">
+                        <p className="truncate text-sm font-semibold text-gray-900">{picked.label}</p>
+                        <p className="font-mono text-[11px] text-gray-500">
                           {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)}
                         </p>
                       </div>
@@ -186,10 +163,10 @@ export default function MapView({
                   <MapPin className="h-6 w-6" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-white">Map needs a Mapbox token</p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Add <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">VITE_MAPBOX_TOKEN</code>{" "}
-                    to <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">frontend/.env</code> to
+                  <p className="text-sm font-semibold text-gray-900">Map needs a Mapbox token</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Add <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">VITE_MAPBOX_TOKEN</code>{" "}
+                    to <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">frontend/.env</code> to
                     enable the live 3D map.
                   </p>
                 </div>
@@ -204,11 +181,11 @@ export default function MapView({
           {MAPBOX_ENABLED && (
             <button
               onClick={() => setPicked(DEMO)}
-              className="group mx-auto mt-4 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-brand cursor-pointer"
+              className="group mx-auto mt-4 flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-brand cursor-pointer"
             >
               <MapPin className="h-4 w-4" />
               Or jump to the demo intersection
-              <span className="text-slate-600 transition-transform group-hover:translate-x-0.5">↗</span>
+              <span className="text-gray-500 transition-transform group-hover:translate-x-0.5">↗</span>
             </button>
           )}
         </section>
@@ -218,14 +195,14 @@ export default function MapView({
           {SIGNALS.map((s, i) => (
             <article
               key={s.title}
-              className="panel group p-5 transition-colors hover:border-white/20 animate-fade-up"
+              className="panel group p-5 transition-colors hover:border-gray-300 animate-fade-up"
               style={{ animationDelay: `${i * 90}ms` }}
             >
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand ring-1 ring-brand/20 transition-colors group-hover:bg-brand/15">
                 <s.Icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 text-sm font-semibold text-white">{s.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{s.body}</p>
+              <h3 className="mt-4 text-sm font-semibold text-gray-900">{s.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{s.body}</p>
             </article>
           ))}
         </section>

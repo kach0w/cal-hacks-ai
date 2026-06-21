@@ -22,7 +22,7 @@ function stageOf(e: ProgressEvent): Stage {
 }
 
 const STAGE_META: Record<Stage, { label: string; accent: string; Icon: typeof Eye }> = {
-  dispatch: { label: "Dispatch", accent: "text-slate-400", Icon: Search },
+  dispatch: { label: "Dispatch", accent: "text-gray-500", Icon: Search },
   vision: { label: "Stage 1 · blind vision", accent: "text-brand", Icon: Eye },
   corroborate: { label: "Stage 2 · corroboration", accent: "text-confirmed", Icon: Check },
   accountability: { label: "Accountability", accent: "text-reported", Icon: FileWarning },
@@ -44,7 +44,7 @@ function decorate(msg: string) {
               : p === "MEDIUM"
                 ? "text-candidate"
                 : p === "LOW"
-                  ? "text-slate-500"
+                  ? "text-gray-500"
                   : "";
     return cls ? (
       <span key={i} className={cls}>
@@ -67,16 +67,16 @@ export default function AgentFeed({ lat, lng }: { lat: number; lng: number }) {
   return (
     <div className="panel flex h-full flex-col overflow-hidden">
       {/* Terminal chrome */}
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-signal/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-candidate/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-confirmed/70" />
           </span>
-          <span className="ml-1 font-mono text-xs text-slate-400">live agent feed</span>
+          <span className="ml-1 font-mono text-xs text-gray-500">live agent feed</span>
         </div>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] text-slate-500">
+        <span className="flex items-center gap-1.5 font-mono text-[11px] text-gray-500">
           <span
             className={`h-1.5 w-1.5 rounded-full ${done ? "bg-confirmed" : "bg-brand animate-blink"}`}
           />
@@ -94,14 +94,14 @@ export default function AgentFeed({ lat, lng }: { lat: number; lng: number }) {
           <div className="space-y-2 pt-2">
             {[90, 70, 80, 60].map((w, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/10" />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-100" />
                 <div
-                  className="h-3 rounded bg-white/[0.06]"
+                  className="h-3 rounded bg-gray-50"
                   style={{ width: `${w}%`, animation: "blink 1.4s infinite", animationDelay: `${i * 120}ms` }}
                 />
               </div>
             ))}
-            <p className="pt-3 text-slate-500">Connecting to orchestrator…</p>
+            <p className="pt-3 text-gray-500">Connecting to orchestrator…</p>
           </div>
         )}
 
@@ -118,13 +118,13 @@ export default function AgentFeed({ lat, lng }: { lat: number; lng: number }) {
                   <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
                     {m.label}
                   </span>
-                  <span className="h-px flex-1 bg-white/10" />
+                  <span className="h-px flex-1 bg-gray-100" />
                 </div>
               )}
-              <div className="flex gap-2 pl-0.5 text-slate-300">
+              <div className="flex gap-2 pl-0.5 text-gray-500">
                 <span className={`select-none ${m.accent}`}>›</span>
                 <span>
-                  <span className="text-slate-500">{String(e.agent)}: </span>
+                  <span className="text-gray-500">{String(e.agent)}: </span>
                   {decorate(String(e.msg))}
                 </span>
               </div>

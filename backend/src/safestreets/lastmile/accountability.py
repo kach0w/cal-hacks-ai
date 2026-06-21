@@ -23,5 +23,8 @@ async def build_log(intersection_id: str, community_data: dict[str, Any]) -> lis
             )
         )
     if events:
-        await cache.set_json(keys.accountability_key(intersection_id), [e.model_dump() for e in events])
+        try:
+            await cache.set_json(keys.accountability_key(intersection_id), [e.model_dump() for e in events])
+        except Exception:
+            pass
     return events

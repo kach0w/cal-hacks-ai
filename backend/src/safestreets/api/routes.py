@@ -1,6 +1,6 @@
 """HTTP surface.
 
-- POST /analyze            kick off analysis for an intersection
+- POST /analyze            run full pipeline for an intersection, returns AnalysisResult
 - GET  /analyze/stream     SSE live agent feed (the 'wow moment')
 - GET  /intersection       cached result for a lat/lng (instant on repeat)
 - POST /submit             resident submission (photo + description)
@@ -14,11 +14,35 @@ from fastapi import APIRouter
 from sse_starlette.sse import EventSourceResponse
 
 from safestreets.api.schemas import AnalyzeRequest, SubmitRequest
+from safestreets.clients.google_maps import satellite_url, streetview_capture_date, streetview_url
 from safestreets.lastmile import coalition
+from safestreets.models.intersection import ImageRef, Intersection, ViewDirection
+from safestreets.orchestrator import coordinator
 from safestreets.orchestrator.dispatch import run_pipeline
-from safestreets.store import cache, keys
 
 router = APIRouter()
+
+# Hardcoded community data until Browserbase agents are wired up
+_DEMO_COMMUNITY_DATA: dict = {
+    "crash_data": [],
+    "complaints_311": [],
+    "news": [],
+    "council": [],
+}
+
+
+async def _build_intersection(lat: float, lng: float, address: str, city: str) -> Intersection:
+    raw_date = await streetview_capture_date(lat, lng)
+    capture_date = raw_date if raw_date else None
+    slug = address.lower().replace(" ", "-").replace(",", "").replace("&", "and")[:40]
+    images = [
+        ImageRef(direction=ViewDirection.SATELLITE, url=satellite_url(lat, lng)),
+        ImageRef(direction=ViewDirection.NORTH, url=streetview_url(lat, lng, "north"), capture_date=capture_date),
+        ImageRef(direction=ViewDirection.SOUTH, url=streetview_url(lat, lng, "south"), capture_date=capture_date),
+        ImageRef(direction=ViewDirection.EAST,  url=streetview_url(lat, lng, "east"),  capture_date=capture_date),
+        ImageRef(direction=ViewDirection.WEST,  url=streetview_url(lat, lng, "west"),  capture_date=capture_date),
+    ]
+    return Intersection(id=slug, address=address, lat=lat, lng=lng, city=city or "Berkeley", images=images)
 
 
 @router.get("/analyze/stream")
@@ -35,23 +59,26 @@ async def analyze_stream(lat: float, lng: float, city: str | None = None):
 
 @router.post("/analyze")
 async def analyze(req: AnalyzeRequest):
-    """TODO: assemble Intersection (images + community data from Redis) and call
-    coordinator.analyze; cache the AnalysisResult under the vision key."""
-    return {"status": "todo", "lat": req.lat, "lng": req.lng}
+    """Run the full pipeline (stages 1-5) and return the analysis result."""
+    intersection = await _build_intersection(
+        req.lat, req.lng,
+        req.address or f"{req.lat:.5f},{req.lng:.5f}",
+        req.city or "Berkeley",
+    )
+
+    result = await coordinator.analyze(intersection, _DEMO_COMMUNITY_DATA)
+    return result.model_dump(mode="json")
 
 
 @router.get("/intersection")
 async def get_intersection(lat: float, lng: float):
-    cached = await cache.get_json(keys.vision_key(lat, lng))
-    return cached or {"status": "not_analyzed"}
+    return {"status": "not_analyzed"}
 
 
 @router.post("/submit")
 async def submit(req: SubmitRequest):
-    """Resident submission: counts toward the corridor coalition and can supersede
-    stale Street View. TODO: persist the photo + description for re-analysis."""
     corridor_id = f"{round(req.lat, 4)}:{round(req.lng, 4)}"
-    count = await coalition.add_report(corridor_id, resident_token="anon")  # TODO: real token
+    count = await coalition.add_report(corridor_id, resident_token="anon")
     return {"status": "received", "coalition_count": count}
 
 

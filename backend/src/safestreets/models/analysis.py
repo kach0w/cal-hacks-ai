@@ -25,5 +25,7 @@ class AnalysisResult(BaseModel):
     accountability: list[AccountabilityEvent] = Field(default_factory=list)
     coalition_count: int = 0          # how many residents flagged this corridor
     annotated_image_url: str | None = None
-    concept_image_url: str | None = None   # ALWAYS rendered with a "concept, not a photo" label
+    renders: list[dict] = Field(default_factory=list)   # per-finding before/after data URIs
+    social_post: str | None = None
+    council_report: str | None = None
     generated_at: datetime = Field(default_factory=datetime.utcnow)

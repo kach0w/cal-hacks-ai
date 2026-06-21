@@ -8,9 +8,11 @@ from typing import Any
 
 from safestreets.intervention import funding_match, matcher
 from safestreets.lastmile import accountability, coalition
+from safestreets.lastmile.ask import build_council_report, build_social_post
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
 from safestreets.render import annotate
+from safestreets.render.concept import generate as render_concept
 from safestreets.vision import stage1_blind, stage2_corroborate
 
 
@@ -21,11 +23,11 @@ async def analyze(intersection: Intersection, community_data: dict[str, Any]) ->
     # Stage 2: independent corroboration
     findings = await stage2_corroborate.corroborate(conditions, community_data)
 
-    # attach candidate interventions (+ funding programs live on the intervention)
+    # Stage 3: attach interventions
     for f in findings:
         f.intervention = matcher.match(f.condition)
         if f.intervention:
-            _ = funding_match.programs_for(f.intervention)  # available to the API/UI
+            _ = funding_match.programs_for(f.intervention)
 
     result = AnalysisResult(
         intersection=intersection,
@@ -33,11 +35,27 @@ async def analyze(intersection: Intersection, community_data: dict[str, Any]) ->
         accountability=await accountability.build_log(intersection.id, community_data),
         coalition_count=await coalition.count(intersection.id),
     )
+
+    # Stage 4: last-mile packet (non-fatal)
+    try:
+        result.social_post = await build_social_post(findings, intersection, community_data)
+        result.council_report = await build_council_report(findings, intersection, community_data)
+    except Exception:
+        pass
+
+    # Annotated satellite overlay (non-fatal)
     sat = intersection.satellite()
     if sat:
         try:
             png = await annotate.annotate_satellite(sat.url, findings)
             result.annotated_image_url = "data:image/png;base64," + base64.b64encode(png).decode()
-        except Exception:  # noqa: BLE001 — annotation is non-fatal to the result bundle
+        except Exception:
             pass
+
+    # Stage 5: per-finding Gemini before/after renders (non-fatal)
+    try:
+        result.renders = await render_concept(intersection, findings)
+    except Exception:
+        pass
+
     return result
