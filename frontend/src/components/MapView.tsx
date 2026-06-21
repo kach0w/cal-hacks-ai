@@ -98,7 +98,7 @@ export default function MapView({
                 }}
               />
             </div>
-            <button type="submit" className="btn-primary" style={{ padding: "16px 28px", fontSize: 10, letterSpacing: 2 }}>
+            <button type="submit" className="btn-primary" style={{ padding: "14px 24px", fontSize: 8, letterSpacing: 2, alignSelf: "stretch" }}>
               SCAN &nbsp;<ArrowRight className="h-4 w-4" />
             </button>
           </form>
