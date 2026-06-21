@@ -87,15 +87,14 @@ function CouncilReport({ report }: { report: string }) {
     const html = paras.map(p => `<p>${p.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>")}</p>`).join("\n");
     const w = window.open("", "_blank")!;
     w.document.write(`<!DOCTYPE html><html><head><title>SafeStreets Council Letter</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-  body { background: #f0ece0; color: #1a1f3d; font-family: "VT323", monospace; font-size: 20px; line-height: 1.7; margin: 0; padding: 0; }
-  .page { max-width: 680px; margin: 60px auto; padding: 48px; background: #fff; border: 4px solid #2c3060; box-shadow: 6px 6px 0 #0f1428; }
-  .header { font-family: "Press Start 2P", monospace; font-size: 10px; color: #e8c000; margin-bottom: 32px; border-bottom: 3px solid #2c3060; padding-bottom: 16px; }
-  .title { font-family: "Press Start 2P", monospace; font-size: 8px; color: #1a1f3d; margin-bottom: 24px; }
-  p { margin: 0 0 1.2em 0; color: #1a1f3d; }
+  body { background: #e8e4d4; color: #1a1f3d; font-family: "Press Start 2P", monospace; font-size: 11px; line-height: 2; margin: 0; padding: 0; }
+  .page { max-width: 680px; margin: 60px auto; padding: 48px; background: #e8e4d4; border: 4px solid #2c3060; box-shadow: 6px 6px 0 #0f1428; }
+  .header { font-size: 10px; color: #e8c000; margin-bottom: 28px; border-bottom: 3px solid #2c3060; padding-bottom: 14px; }
+  p { margin: 0 0 1.4em 0; }
   @media print {
-    body { background: #fff; }
+    body { background: #e8e4d4; }
     .page { border: none; box-shadow: none; margin: 0; padding: 32px; }
   }
 </style></head>
@@ -110,32 +109,37 @@ ${html}
   return (
     <>
       <div
-        className="border border-[#d4d0c8] bg-[#faf9f6] overflow-hidden"
-        style={{ borderRadius: 2, maxHeight: open ? "none" : 200, overflow: "hidden", position: "relative" }}
+        style={{
+          border: "3px solid #2c3060",
+          background: "#e8e4d4",
+          position: "relative",
+          maxHeight: open ? "none" : 220,
+          overflow: "hidden",
+        }}
       >
-        <div className="p-4" style={{ fontFamily: "Georgia, serif", fontSize: 14, lineHeight: 1.8, color: "#222" }}>
+        <div className="p-4" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 11, lineHeight: 2, color: "#1a1f3d" }}>
           {paragraphs.map((para, i) => (
-            <p key={i} style={{ margin: "0 0 1em 0" }}>{para}</p>
+            <p key={i} style={{ margin: "0 0 1.2em 0" }}>{para}</p>
           ))}
         </div>
         {!open && (
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 48, background: "linear-gradient(to top, #faf9f6, transparent)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, #e8e4d4, transparent)", pointerEvents: "none" }} />
         )}
       </div>
 
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-1.5 border border-[#d4d0c8] bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-          style={{ borderRadius: 2, fontFamily: "Georgia, serif" }}
+          className="btn-ghost"
+          style={{ fontSize: 8, padding: "8px 12px" }}
         >
           {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {open ? "Collapse" : "Read full letter"}
+          {open ? "COLLAPSE" : "READ FULL"}
         </button>
         <button
           onClick={printReport}
-          className="inline-flex items-center gap-1.5 bg-amber-500 px-3 py-1.5 text-xs text-white hover:bg-amber-600 transition-colors"
-          style={{ borderRadius: 2, fontFamily: "Georgia, serif" }}
+          className="btn-primary"
+          style={{ fontSize: 8, padding: "8px 12px" }}
         >
           <Printer className="h-3 w-3" />
           Export PDF

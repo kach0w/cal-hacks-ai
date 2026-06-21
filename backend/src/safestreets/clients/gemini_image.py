@@ -48,10 +48,18 @@ async def generate_image(
     client = genai.Client(api_key=key)
 
     try:
+        if source_image_bytes:
+            contents = [
+                types.Part.from_bytes(data=source_image_bytes, mime_type=source_mime),
+                types.Part.from_text(text=prompt),
+            ]
+        else:
+            contents = prompt
+
         fn = partial(
             client.models.generate_content,
             model=_MODEL,
-            contents=prompt,
+            contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE", "TEXT"],
                 thinking_config=types.ThinkingConfig(thinking_budget=8192),

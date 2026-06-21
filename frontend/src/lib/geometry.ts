@@ -8,6 +8,6 @@ const ZONE_FRACTIONS: Record<NamedZone, [number, number]> = {
 };
 
 export function zoneToPercent(zone: NamedZone): { left: string; top: string } {
-  const [fx, fy] = ZONE_FRACTIONS[zone];
+  const [fx, fy] = ZONE_FRACTIONS[zone] ?? ZONE_FRACTIONS["CENTER"];
   return { left: `${fx * 100}%`, top: `${fy * 100}%` };
 }
