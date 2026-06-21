@@ -1,93 +1,63 @@
 # Inspiration
 
-Every city has streets everyone knows are dangerous — the corner where cars don't yield, the crosswalk no one can see at night. The data to prove it exists: crash records, 311 complaints, local news, council minutes. But it's scattered across a dozen portals, and turning it into something a city will actually act on — the specific fix, the grant that pays for it, the official to email — takes hours of expert work.
+There's an intersection near our campus where someone almost gets hit every week. Everyone knows it's dangerous. The city probably knows too. But nothing happens.
 
-We built SafeStreets to do that in one click: drop a pin on any street and get a complete, fundable, ready-to-send case for fixing it.
+We looked into why — turns out the data to prove it is all there (crash records, 311 complaints, news articles, council minutes) but it's spread across like 12 different government websites. And even if you find it all, you still have to write the letter, find the right official, figure out which grant pays for the fix. That's hours of work most people aren't going to do.
+
+So we built SafeStreets. Drop a pin, get the whole case in one click.
 
 ---
 
 # What makes it different
 
-**Blind-then-corroborate.** Our vision model never sees the community data. Claude diagnoses hazards from satellite + Street View imagery alone — then a separate pass checks those findings against real crash, 311, news, and council records. So "seen" and "reported" are two independent signals, not a model agreeing with itself. Every finding comes out labeled CONFIRMED / CANDIDATE / REPORTED, and the label is trustworthy.
+**The AI looks at the street before it looks at any complaints.** We made Claude analyze satellite and Street View photos without showing it any community data first. Then separately, we check if what it saw matches real crash reports and 311 complaints. That way "the camera spotted it" and "residents reported it" are actually two separate signals — not the model just agreeing with itself. We thought this was important for the results to actually be trustworthy.
 
-**It can't point at the wrong corner.** Each hazard is assigned to a named zone (NW corner, north leg, crosswalk) and mapped to a marker deterministically — no raw-pixel guessing, no marker drifting onto the wrong street.
+**It can't point at the wrong corner.** Instead of using pixel coordinates (which drift), we made Claude assign hazards to named zones like "NW corner" or "north crosswalk." The markers snap to the right spot every time.
 
-**It finishes the job.** Most tools stop at "here's a problem." SafeStreets hands you the fix, the grant that funds it, the official to contact, a before/after render of the fixed street, and a ready-to-send council letter — the whole last mile.
+**It finishes the job.** Most tools just tell you there's a problem. SafeStreets gives you the specific fix, which grant program funds it, who to email, a before/after render of what the street would look like, and a letter you can actually send.
 
 ---
 
 # What it does
 
-Drop a pin on the map. SafeStreets then:
-
-- **Sees the hazard** — Claude reads satellite + Street View imagery, blind to any community data, and localizes dangers to named zones.
-- **Proves it** — an independent pass corroborates each finding against real crash, 311, news, and council data → CONFIRMED / CANDIDATE / REPORTED.
-- **Routes the fix** — matches each finding to a concrete intervention and the funding program that pays for it (SS4A / HSIP / state grants).
-- **Closes the last mile** — numbered markers on the real satellite image, a council letter, a shareable social post, an accountability record, and before/after Gemini renders of the street with the fix applied.
+```
+pin drop → grab crash data, 311, news, street view (all at once)
+         → claude looks at photos, spots hazards (no peeking at complaints)
+         → cross-check findings against the community data
+         → match each hazard to a fix + the grant that pays for it
+         → spit out a tweet, a council letter, before/after renders
+```
 
 ---
-
-# Architecture
-
-```
-  map click
-      │
-      ▼
-  ┌─────────────────────────────────────────────────┐
-  │  data agents  (run in parallel)                 │
-  │  crash records · 311 complaints · news · images │
-  └───────────────────────┬─────────────────────────┘
-                          │
-                          ▼
-              Stage 1 — blind vision
-              Claude sees images only 🔒
-              spots hazards, names the zone
-                          │
-                          ▼
-              Stage 2 — corroboration
-              now cross-checks community data
-              CONFIRMED · CANDIDATE · REPORTED
-                          │
-                          ▼
-              Stage 3 — intervention
-              costed fix + grant match
-              SS4A / HSIP / state programs
-                          │
-                          ▼
-  ┌───────────────────────┴─────────────────────────┐
-  │  last mile                                      │
-  │  tweet · council letter · before/after render   │
-  └─────────────────────────────────────────────────┘
-```
 
 # How we built it
 
-**Vision (Claude Haiku):** a two-stage pipeline — blind detection, then independent corroboration — with deterministic named-zone → marker placement drawn onto the real satellite image. Built with Claude Code.
+**Claude (Haiku)** runs the two-stage vision pipeline. First pass is blind — images only. Second pass sees the community data and corroborates. We used Claude Code to build most of it.
 
-**Browserbase:** the data that has no clean API — JS-rendered local news and council-agenda PDFs — reached with real headless browsers. California crash data (CCRS) and city 311 records stay on fast open-data APIs. Choosing the right tool per source kept the pipeline fast and reliable.
+**Browserbase** handles the data sources that don't have clean APIs — local news sites and council agenda PDFs that need a real browser to load. Crash records and 311 stay on regular open data APIs.
 
-**Redis as shared memory:** more than a cache — the pipeline's shared state, persisting the accountability log, coalition counts, and per-location evidence across agents. Two-layer caching (raw scrape + full analysis, separately keyed) means repeat queries are instant and a bad first run never poisons future results.
+**Redis** caches everything per intersection. Two layers: raw scraped data and the full analysis result. Only writes to cache when agents actually returned something — otherwise a bad first run would poison every reload.
 
-**Frontend:** React + TypeScript + Tailwind + Mapbox GL, in a retro pixel aesthetic (Press Start 2P / VT323). A live SSE agent feed shows the pipeline's stages in real time as it runs.
+**Frontend** is React + Mapbox with a retro pixel aesthetic. There's a live feed that shows what each agent is doing as it runs.
 
 ---
 
-# Challenges we ran into
+# Challenges
 
-**Keeping the two signals independent.** It would've been easy to let the model peek at complaints; we firewalled the blind pass on purpose, because that firewall is the product's credibility.
+**Keeping the two signals actually independent.** It would've been so easy to just show the model the complaints and let it run. We had to be pretty disciplined about the firewall because that's the whole point — if the model just reads the complaints and says "yep looks dangerous," that's not really two signals.
 
-**The most useful data has no clean API.** News and council agendas live in JS-rendered pages and PDFs. Browserbase let us drive real browsers to reach them while crashes and 311 stayed on APIs — choosing the right tool per source mattered more than raw scraping volume.
+**Government data is a mess.** News and council documents live in JS-rendered pages and PDFs that normal scrapers can't reach. Browserbase saved us there. And even the "clean" APIs (crash records, 311) each have totally different schemas.
 
-**Matching is deceptively hard.** Naive substring matching let "vision" match "pro-vision" and "king" (from MLK Way) match "par*king*." We moved to whole-word, geocoded matching and forward-geocoded true intersections to precise coordinates.
+**Substring matching is a nightmare.** We had bugs where "king" matched "parking" and "vision" matched "provision" when searching crash records near MLK Way. Had to switch to whole-word matching and actually geocode intersections to real coordinates.
 
-**Cache poisoning.** When the SSE stream and the POST /analyze hit simultaneously on first load, both race to fetch community data. If one finishes first with empty results (rate limit, timeout), those empty results would get cached and poison every subsequent run. The fix: only write to cache when there's real data, and if your own fetch came back empty, check whether the concurrent stream saved something better in the meantime.
+**Race condition in the cache.** The live agent feed and the analysis request both hit the server at the same time on first load. If the analysis request finished first with empty data (rate limit, timeout), those empty results would get cached and break every subsequent load. Fix was to only cache when there's real data, and check if the other concurrent request saved something better.
 
 ---
 
 # What we learned
 
-**Independence is the feature.** Firewalling the blind pass is what turns "seen and reported" into a credible signal instead of a circular one. The architecture had to protect that separation from the start — it couldn't be bolted on later.
+The blind-then-corroborate thing sounds like an implementation detail but it's actually the whole product. If you skip it, you just have a scraper with a chatbot on top.
 
-**The last mile is the hard part.** Finding data is easy; turning it into the exact ask, grant, and person who can fix it is the work that actually moves a city.
+The last mile is genuinely hard. Getting the data is the easy part. Turning it into the exact letter, to the exact person, with the exact grant number — that's what actually gets streets fixed.
 
-**Right tool per source.** APIs for what has them, Browserbase for what doesn't, Redis to hold it all together — that's what makes a multi-agent pipeline affordable and demo-reliable.
+Pick the right tool per data source. Some things have APIs. Some need a real browser. Don't force one approach for everything.
