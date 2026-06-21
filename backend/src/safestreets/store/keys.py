@@ -30,6 +30,11 @@ def intervention_key(lat: float, lng: float) -> str:
     return f"ss:intervention:{_ll(lat, lng)}"
 
 
+def civic_key(city: str) -> str:
+    # city-wide street-safety scrape of the four civic sites (not per-intersection)
+    return f"ss:civic:{city.lower()}:street-safety"
+
+
 def coalition_key(corridor_id: str) -> str:
     # persistent (no TTL): the count of residents flagging a corridor
     return f"ss:coalition:{corridor_id}"

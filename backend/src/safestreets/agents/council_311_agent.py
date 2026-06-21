@@ -163,7 +163,7 @@ async def _scrape_council(
     return out
 
 
-async def _fetch_311(lat: float, lng: float, radius_deg: float = 0.0015) -> list[dict[str, Any]]:
+async def fetch_311(lat: float, lng: float, radius_deg: float = 0.0015) -> list[dict[str, Any]]:
     """Every Berkeley 311 case within the intersection bounding box (no cap)."""
     where = (
         f"latitude between {lat - radius_deg} and {lat + radius_deg} "
@@ -201,6 +201,6 @@ async def fetch_council_and_311(
     geofiltered by lat/lng. Council items carry dates for the accountability log.
     """
     street_terms = [t.lower() for t in (street_terms or [])]
-    complaints = await _fetch_311(lat, lng)
+    complaints = await fetch_311(lat, lng)
     council = await _scrape_council(street_terms, max_meetings, max_pdfs)
     return {"complaints_311": complaints, "council": council}

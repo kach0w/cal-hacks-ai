@@ -35,7 +35,6 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     from safestreets.agents import (
         council_311_agent,
         image_fetcher,
-        news_agent,
         structured_data,
     )
     from safestreets.clients import google_maps
@@ -48,9 +47,11 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         streets = await google_maps.nearby_streets(lat, lng)
     except Exception:  # noqa: BLE001
         streets = []
-    terms = google_maps.street_terms(streets)
     yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
 
+    # Per-intersection data is the GEO-filtered hard evidence only: imagery, crashes,
+    # 311. City-wide news + council street-safety coverage lives in the civic key
+    # (ss:civic:<city>:street-safety), scraped once for the whole city — not per corner.
     yield {"agent": "images", "msg": "satellite + street view"}
     images = await _with_retry(lambda: image_fetcher.fetch_images(lat, lng)) or []
     yield {"agent": "images", "msg": "done", "count": len(images)}
@@ -59,30 +60,15 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     crash = await _with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)) or []
     yield {"agent": "structured", "msg": "done", "count": len(crash)}
 
-    yield {"agent": "news", "msg": "local news"}
-    news = await _with_retry(
-        lambda: news_agent.fetch_news(lat, lng, city, street_terms=terms)
-    ) or []
-    yield {"agent": "news", "msg": "done", "count": len(news)}
-
-    yield {"agent": "council_311", "msg": "311 + council agendas"}
-    cc = await _with_retry(
-        lambda: council_311_agent.fetch_council_and_311(lat, lng, city, street_terms=terms)
-    ) or {}
-    complaints = cc.get("complaints_311", [])
-    council = cc.get("council", [])
-    yield {
-        "agent": "council_311", "msg": "done",
-        "complaints": len(complaints), "council": len(council),
-    }
+    yield {"agent": "complaints_311", "msg": "311 complaints"}
+    complaints = await _with_retry(lambda: council_311_agent.fetch_311(lat, lng)) or []
+    yield {"agent": "complaints_311", "msg": "done", "count": len(complaints)}
 
     data = {
         "images": [img.model_dump(mode="json") for img in images],
         "streets": streets,
         "crash_data": crash,
         "complaints_311": complaints,
-        "news": news,
-        "council": council,
     }
     await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
     yield {"__data__": data}
