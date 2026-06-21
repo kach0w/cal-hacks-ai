@@ -49,8 +49,13 @@ async def _list_traffic_posts(client: httpx.AsyncClient, since_year: int) -> lis
 
 
 def _score(slug: str, street_terms: list[str]) -> int:
-    """How many of the intersection's street names appear in the article slug."""
-    return sum(1 for t in street_terms if t and t in slug)
+    """How many street names appear as WHOLE WORDS in the slug.
+
+    Whole-word, not substring: otherwise 'king' (from MLK Way) spuriously matches
+    'walking', 'parking', etc. Slugs are hyphen-separated words.
+    """
+    words = set(slug.lower().split("-"))
+    return sum(1 for t in street_terms if t in words)
 
 
 async def _fetch_article(client: httpx.AsyncClient, post: dict[str, Any]) -> dict[str, Any]:
@@ -121,24 +126,25 @@ async def fetch_news(
     city: str | None,
     street_terms: list[str] | None = None,
     since_year: int = 2023,
-    limit: int | None = None,
+    recent_fallback: int = 25,
     concurrency: int = 10,
 ) -> list[dict[str, Any]]:
-    """Return local-news crash coverage near the intersection.
+    """Return local-news crash coverage for THIS intersection.
 
-    `street_terms` (e.g. ['hearst', 'grant']) keeps only articles whose slug mentions
-    the cross streets; without it we return every traffic-safety post since `since_year`.
-    `limit=None` means no cap (fetch them all). Returns [{title, date, url, excerpt, source}].
+    When we know the cross streets we keep only articles whose slug names one of them —
+    these are the genuinely relevant 'reported' signals for Stage 2 (we do NOT pad with
+    unrelated city-wide crashes, which would just dilute corroboration). With no street
+    context we fall back to the `recent_fallback` most recent traffic posts.
+    Returns [{title, date, url, excerpt, source}].
     """
     street_terms = [t.lower() for t in (street_terms or [])]
     async with httpx.AsyncClient() as client:
         posts = await _list_traffic_posts(client, since_year)
         if street_terms:
-            matched = [p for p in posts if _score(p["slug"], street_terms) > 0]
-            matched.sort(key=lambda p: (_score(p["slug"], street_terms), p["date"]), reverse=True)
-            posts = matched or posts  # fall back to all-recent if no street match
-        if limit is not None:
-            posts = posts[:limit]
+            posts = [p for p in posts if _score(p["slug"], street_terms) > 0]
+            posts.sort(key=lambda p: (_score(p["slug"], street_terms), p["date"]), reverse=True)
+        else:
+            posts = posts[:recent_fallback]  # no cross streets known -> most recent
 
         sem = asyncio.Semaphore(concurrency)
 

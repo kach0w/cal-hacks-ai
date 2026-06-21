@@ -32,7 +32,27 @@ _BERKELEY_311_DATASET = "p88g-6gs2"
 
 _AGENDAVIEWER_RE = re.compile(r"AgendaViewer\.php\?view_id=5&(?:amp;)?clip_id=(\d+)")
 _PDF_HREF_RE = re.compile(r"""href=["']([^"']*?\.pdf[^"']*)["']""", re.I)
-_DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+
+# Berkeley agenda filenames stamp the date in several formats; try them in order.
+_DATE_PATTERNS = (
+    re.compile(r"(20\d{2})-(\d{2})-(\d{2})"),         # 2026-06-16
+    re.compile(r"(20\d{2})-(\d{2})(\d{2})"),          # 2026-0519
+    re.compile(r"\b(\d{1,2})[_/](\d{1,2})[_/](20\d{2})"),  # 6_9_2026 or 6/9/2026
+)
+
+
+def _parse_date(name: str) -> str | None:
+    """Normalize whatever date the filename carries to ISO YYYY-MM-DD."""
+    for i, pat in enumerate(_DATE_PATTERNS):
+        m = pat.search(name)
+        if not m:
+            continue
+        if i < 2:  # year first
+            y, mo, da = m.group(1), m.group(2), m.group(3)
+        else:      # month/day first
+            mo, da, y = m.group(1), m.group(2), m.group(3)
+        return f"{y}-{int(mo):02d}-{int(da):02d}"
+    return None
 
 
 def _abs_pdf(path: str) -> str:
@@ -50,9 +70,9 @@ def _pdf_meta(pdf_url: str) -> tuple[str | None, str]:
          -> ('2026-06-16', 'Item 02 Temporary Appropriations FY 2027')
     """
     name = unquote(pdf_url.rsplit("/", 1)[-1]).removesuffix(".pdf").strip()
-    m = _DATE_RE.search(name)
-    date = m.group(1) if m else None
-    title = name.replace(date, "").strip(" -") if date else name
+    date = _parse_date(name)
+    # strip a leading ISO date prefix for a cleaner title; leave embedded dates alone
+    title = re.sub(r"^20\d{2}-\d{2}-\d{2}\s*", "", name).strip(" -")
     return date, title
 
 
@@ -78,6 +98,16 @@ async def _agenda_pdfs(client: httpx.AsyncClient, clip_id: str) -> list[str]:
     return [_abs_pdf(p) for p in _PDF_HREF_RE.findall(resp.text)]
 
 
+def _title_has_street(title: str, street_terms: list[str]) -> bool:
+    """True only if a street term appears as a WHOLE WORD in the title.
+
+    Substring matching falsely flags 'parking'/'talking' for the 'king' in MLK Way, so
+    we tokenize the title on non-alphanumerics and match whole tokens.
+    """
+    tokens = set(re.split(r"[^a-z0-9]+", title.lower()))
+    return any(t in tokens for t in street_terms)
+
+
 def _pdf_text_snippet(data: bytes, terms: list[str], width: int = 240) -> str | None:
     """Return a text snippet around the first street-term hit, or None if absent."""
     try:
@@ -87,11 +117,10 @@ def _pdf_text_snippet(data: bytes, terms: list[str], width: int = 240) -> str | 
         text = " ".join((page.extract_text() or "") for page in reader.pages)
     except Exception:  # noqa: BLE001
         return None
-    low = text.lower()
     for t in terms:
-        i = low.find(t)
-        if i != -1:
-            start = max(0, i - width // 2)
+        m = re.search(rf"\b{re.escape(t)}\b", text, re.IGNORECASE)
+        if m:
+            start = max(0, m.start() - width // 2)
             return re.sub(r"\s+", " ", text[start : start + width]).strip()
     return None
 
@@ -107,7 +136,7 @@ async def _scrape_council(
         for cid in clip_ids:
             for pdf in await _agenda_pdfs(client, cid):
                 date, title = _pdf_meta(pdf)
-                if any(t in title.lower() for t in street_terms):
+                if _title_has_street(title, street_terms):
                     candidates.append((pdf, date, title))
 
     candidates = candidates[:max_pdfs]
