@@ -63,7 +63,7 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
     # IMPORTANT: only imagery goes in. No community text.
     # Use satellite + N/S only (3 images) to keep input tokens manageable.
     from safestreets.models.intersection import ViewDirection
-    _KEEP = {ViewDirection.SATELLITE, ViewDirection.NORTH, ViewDirection.SOUTH}
+    _KEEP = {ViewDirection.NORTH, ViewDirection.SOUTH, ViewDirection.EAST, ViewDirection.WEST}
     images = [img for img in intersection.images if img.direction in _KEEP]
     encoded = await asyncio.gather(*[_encode_image(img.url) for img in images])
     content: list[dict] = [{"type": "text", "text": _PROMPT}]
