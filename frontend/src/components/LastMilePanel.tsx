@@ -101,7 +101,7 @@ ${html}
           border: "2px solid #2c3060",
           background: "#e8e4d4",
           position: "relative",
-          height: 220,
+          height: 300,
           overflow: "hidden",
         }}
       >

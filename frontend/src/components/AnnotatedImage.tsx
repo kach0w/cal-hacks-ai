@@ -73,14 +73,22 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
             </span>
           ))}
 
-          {/* Markers */}
+          {/* Markers — offset duplicates so they never stack */}
           {result?.findings.map((f, i) => {
-            const pos = zoneToPercent(f.condition.zone);
+            const base = zoneToPercent(f.condition.zone);
+            const dupesBefore = result.findings.slice(0, i).filter(
+              (g) => g.condition.zone === f.condition.zone
+            ).length;
+            const offsetPx = dupesBefore * 42;
+            const pos = {
+              left: `calc(${base.left} + ${offsetPx}px)`,
+              top: base.top,
+            };
             const active = open === i;
             const confirmed = f.status === "CONFIRMED";
-            const pinColor = confirmed ? "#38a832" : "#e8c000";
-            const pinShadow = confirmed ? "#1a5c16" : "#8b6800";
-            const textColor = confirmed ? "#fff" : "#1a1f3d";
+            const pinColor = confirmed ? "#38a832" : "#e84040";
+            const pinShadow = confirmed ? "#1a5c16" : "#8b0000";
+            const textColor = "#fff";
             return (
               <button
                 key={i}
