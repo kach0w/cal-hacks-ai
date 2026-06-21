@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useIntersection } from "../hooks/useIntersection";
-import { composeCouncilEmail } from "../api/client";
-import type { CouncilEmailDraft } from "../types";
-import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail, Paperclip, Download } from "./icons";
+import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail } from "./icons";
 
 export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }) {
   const { result, loading } = useIntersection(lat, lng);
@@ -55,7 +53,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
           </div>
 
           {result.council_report ? (
-            <CouncilReport report={result.council_report} lat={lat} lng={lng} />
+            <CouncilReport report={result.council_report} />
           ) : (
             <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[#d4d0c8] text-sm text-gray-400" style={{ borderRadius: 2 }}>
               Generating…
@@ -67,7 +65,7 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
   );
 }
 
-function CouncilReport({ report, lat, lng }: { report: string; lat: number; lng: number }) {
+function CouncilReport({ report }: { report: string }) {
   const [open, setOpen] = useState(false);
 
   const paragraphs = report.split(/\n\n+/).filter(Boolean);
@@ -136,168 +134,24 @@ ${html}
         </button>
       </div>
 
-      <EmailCouncil lat={lat} lng={lng} />
+      <EmailCouncil report={report} />
     </>
   );
 }
 
-/**
- * Email-the-council action that sits under the printable report. An LLM email agent on the
- * backend writes a human, professional message (concerns + statistics + call to action) and
- * a subject line, resolves the council member(s) by jurisdiction (Socrata), and returns the
- * draft plus the report PDF. The user can send it through whichever platform they use:
- * desktop mail (a .eml that opens with the PDF already attached) or web Gmail/Outlook/default
- * (a prefilled compose window — web compose can't carry an attachment, so we download the PDF
- * for them to attach in one click).
- */
-function downloadBase64(b64: string, name: string, mime: string) {
-  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-type WebPlatform = "gmail" | "outlook" | "mailto";
-
-function composeUrl(platform: WebPlatform, to: string, subject: string, body: string): string {
-  const s = encodeURIComponent(subject);
-  const b = encodeURIComponent(body);
-  switch (platform) {
-    case "gmail":
-      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${s}&body=${b}`;
-    case "outlook":
-      return `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${s}&body=${b}`;
-    case "mailto":
-      return `mailto:${to}?subject=${s}&body=${b}`;
-  }
-}
-
-function EmailCouncil({ lat, lng }: { lat: number; lng: number }) {
-  const [draft, setDraft] = useState<CouncilEmailDraft | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [attachHint, setAttachHint] = useState(false);
-
-  async function compose() {
-    setLoading(true);
-    setError(false);
-    const d = await composeCouncilEmail(lat, lng);
-    if (d) setDraft(d);
-    else setError(true);
-    setLoading(false);
-  }
-
-  /** Web compose (Gmail/Outlook/default): prefill the message and hand over the PDF to attach. */
-  function sendVia(platform: WebPlatform) {
-    if (!draft) return;
-    const to = draft.recipients.map((r) => r.email).join(",");
-    downloadBase64(draft.pdf_base64, draft.pdf_filename, "application/pdf");
-    window.open(composeUrl(platform, to, draft.subject, draft.body), "_blank");
-    setAttachHint(true);
-  }
-
-  /** Desktop mail: a .eml that opens in Outlook/Apple Mail with the PDF already attached. */
-  function downloadEml() {
-    if (!draft) return;
-    downloadBase64(draft.eml_base64, draft.filename, "message/rfc822");
+function EmailCouncil({ report }: { report: string }) {
+  function sendEmail() {
+    const subject = encodeURIComponent("Pedestrian Safety Concerns — SafeStreets Analysis");
+    const body = encodeURIComponent(report);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
   return (
-    <div className="mt-4" style={{ borderTop: "2px dashed #2c3060", paddingTop: 14 }}>
-      <div className="mb-2 flex items-center gap-2">
-        <span className="grid h-6 w-6 place-items-center" style={{ background: "#daeeff", border: "2px solid #2c3060" }}>
-          <Mail className="h-3 w-3" style={{ color: "#3060c8" }} />
-        </span>
-        <h4 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>EMAIL CITY COUNCIL</h4>
-      </div>
-
-      {!draft && (
-        <>
-          <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#6070a0", margin: "0 0 8px" }}>
-            An email agent drafts a professional message to the councilmember for this
-            intersection — with the report PDF attached.
-          </p>
-          <button
-            onClick={compose}
-            disabled={loading}
-            className="btn-primary"
-            style={{ fontSize: 8, padding: "8px 12px", opacity: loading ? 0.6 : 1 }}
-          >
-            <Mail className="h-3 w-3" />
-            {loading ? "DRAFTING…" : "Draft email to council"}
-          </button>
-          {error && (
-            <p style={{ fontFamily: '"VT323", monospace', fontSize: 16, color: "#e84040", margin: "8px 0 0" }}>
-              Couldn't draft the email — run the analysis for this intersection first, then retry.
-            </p>
-          )}
-        </>
-      )}
-
-      {draft && (
-        <div style={{ border: "2px solid #2c3060", background: "#e8e4d4" }}>
-          <div style={{ padding: "8px 10px", borderBottom: "2px solid #2c3060" }}>
-            <FieldRow label="TO">
-              {draft.recipients.map((r, i) => (
-                <span key={i} title={r.role + (r.district ? ` · District ${r.district}` : "")} style={{ display: "inline-block", marginRight: 6, marginBottom: 4, padding: "2px 6px", background: "#daeeff", border: "2px solid #3060c8", fontFamily: '"VT323", monospace', fontSize: 15, color: "#1a1f3d" }}>
-                  {r.email}
-                </span>
-              ))}
-            </FieldRow>
-            <FieldRow label="SUBJECT">
-              <span style={{ fontFamily: '"VT323", monospace', fontSize: 17, color: "#1a1f3d" }}>{draft.subject}</span>
-            </FieldRow>
-          </div>
-
-          <div style={{ padding: "10px", maxHeight: 180, overflowY: "auto", fontFamily: '"VT323", monospace', fontSize: 17, lineHeight: 1.4, color: "#1a1f3d", whiteSpace: "pre-wrap" }}>
-            {draft.body}
-          </div>
-
-          <div style={{ padding: "8px 10px", borderTop: "2px solid #2c3060" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>
-              <Paperclip className="h-3 w-3" />
-              {draft.pdf_filename}
-            </div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              <button onClick={() => sendVia("gmail")} className="btn-primary" style={{ fontSize: 8, padding: "8px 10px" }}>
-                <Mail className="h-3 w-3" />
-                Gmail
-              </button>
-              <button onClick={() => sendVia("outlook")} className="btn-primary" style={{ fontSize: 8, padding: "8px 10px" }}>
-                <Mail className="h-3 w-3" />
-                Outlook
-              </button>
-              <button onClick={() => sendVia("mailto")} className="btn-ghost" style={{ fontSize: 8, padding: "8px 10px" }}>
-                <Mail className="h-3 w-3" />
-                Default app
-              </button>
-              <button onClick={downloadEml} className="btn-ghost" style={{ fontSize: 8, padding: "8px 10px" }}>
-                <Download className="h-3 w-3" />
-                .eml (Outlook/Apple — PDF attached)
-              </button>
-            </div>
-
-            <p style={{ fontFamily: '"VT323", monospace', fontSize: 15, lineHeight: 1.3, color: attachHint ? "#1a1f3d" : "#6070a0", margin: "8px 0 0" }}>
-              {attachHint
-                ? `↳ Your draft opened in a new tab and ${draft.pdf_filename} downloaded — attach it before sending.`
-                : "Gmail / Outlook / Default open a prefilled draft (the PDF downloads to attach). The .eml opens in a desktop mail app with the PDF already attached."}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 4 }}>
-      <span style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", flexShrink: 0, width: 56 }}>{label}</span>
-      <span style={{ flex: 1 }}>{children}</span>
+    <div className="mt-3">
+      <button onClick={sendEmail} className="btn-primary" style={{ fontSize: 8, padding: "8px 12px" }}>
+        <Mail className="h-3 w-3" />
+        EMAIL COUNCIL
+      </button>
     </div>
   );
 }
