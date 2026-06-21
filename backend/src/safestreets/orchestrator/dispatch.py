@@ -39,7 +39,9 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         structured_data,
     )
     from safestreets.clients import google_maps
+    from safestreets.config import get_settings
 
+    city = city or get_settings().demo_city  # demo scope lives in one config knob
     yield {"agent": "orchestrator", "msg": "locating intersection"}
     streets: list[str] = []
     try:

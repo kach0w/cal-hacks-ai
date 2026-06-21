@@ -121,13 +121,14 @@ async def fetch_news(
     city: str | None,
     street_terms: list[str] | None = None,
     since_year: int = 2023,
-    limit: int = 8,
+    limit: int | None = None,
+    concurrency: int = 10,
 ) -> list[dict[str, Any]]:
-    """Return recent local-news crash coverage near the intersection.
+    """Return local-news crash coverage near the intersection.
 
-    `street_terms` (e.g. ['hearst', 'grant']) ranks articles whose slug mentions the
-    cross streets first; without it we return the most recent traffic-safety posts.
-    Returns [{title, date, url, excerpt, source}].
+    `street_terms` (e.g. ['hearst', 'grant']) keeps only articles whose slug mentions
+    the cross streets; without it we return every traffic-safety post since `since_year`.
+    `limit=None` means no cap (fetch them all). Returns [{title, date, url, excerpt, source}].
     """
     street_terms = [t.lower() for t in (street_terms or [])]
     async with httpx.AsyncClient() as client:
@@ -135,9 +136,17 @@ async def fetch_news(
         if street_terms:
             matched = [p for p in posts if _score(p["slug"], street_terms) > 0]
             matched.sort(key=lambda p: (_score(p["slug"], street_terms), p["date"]), reverse=True)
-            posts = matched or posts  # fall back to recent if no street match
-        posts = posts[:limit]
+            posts = matched or posts  # fall back to all-recent if no street match
+        if limit is not None:
+            posts = posts[:limit]
+
+        sem = asyncio.Semaphore(concurrency)
+
+        async def _bounded(p: dict[str, Any]) -> dict[str, Any]:
+            async with sem:
+                return await _fetch_article(client, p)
+
         articles = await asyncio.gather(
-            *(_fetch_article(client, p) for p in posts), return_exceptions=True
+            *(_bounded(p) for p in posts), return_exceptions=True
         )
     return [a for a in articles if isinstance(a, dict)]

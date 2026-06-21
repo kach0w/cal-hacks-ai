@@ -135,13 +135,13 @@ async def _scrape_council(
 
 
 async def _fetch_311(lat: float, lng: float, radius_deg: float = 0.0015) -> list[dict[str, Any]]:
-    """Berkeley 311 cases within a small bounding box around the intersection."""
+    """Every Berkeley 311 case within the intersection bounding box (no cap)."""
     where = (
         f"latitude between {lat - radius_deg} and {lat + radius_deg} "
         f"and longitude between {lng - radius_deg} and {lng + radius_deg}"
     )
     try:
-        rows = await socrata.query(_SOCRATA_DOMAIN, _BERKELEY_311_DATASET, where, limit=100)
+        rows = await socrata.query_all(_SOCRATA_DOMAIN, _BERKELEY_311_DATASET, where)
     except httpx.HTTPError:
         return []
     return [
