@@ -84,7 +84,7 @@ async def run_one(lat: float, lng: float, address: str):
         else:
             print(f"  [{f.condition.zone.value}] → NO MATCH: {f.condition.observation[:60]}")
     print("-" * 40)
-
+    
     # print("Stage 4 (last-mile packet):")
     # social = await build_social_post(findings, intersection, DEMO_COMMUNITY_DATA)
     # print(f"\n  SOCIAL POST:\n  {social}\n")

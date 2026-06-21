@@ -81,7 +81,10 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         "complaints_311": complaints,
         "news": news,
     }
-    await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
+    # Only cache scrape if we got some community data — avoids poisoning the cache
+    # with empty agent results that would block all future re-fetches.
+    if crash or complaints or news:
+        await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
     yield {"__data__": data}
 
 
@@ -103,7 +106,13 @@ async def run_pipeline(lat: float, lng: float, city: str | None) -> AsyncIterato
 
 
 async def gather_data(lat: float, lng: float, city: str | None) -> dict[str, Any]:
-    """Non-streaming gather used by POST /analyze. Cache-first, then agents."""
+    """Non-streaming gather used by POST /analyze. Cache-first, then agents.
+
+    POST /analyze and the SSE stream both start concurrently on first load, so both
+    may call _gather simultaneously. If our _gather comes back with empty community
+    data, the SSE stream's _gather may have saved better data in the meantime — check
+    the scrape_key one more time before handing empty data to the analysis pipeline.
+    """
     cached = await cache.get_json(keys.scrape_key(lat, lng))
     if cached is not None:
         return cached
@@ -111,4 +120,10 @@ async def gather_data(lat: float, lng: float, city: str | None) -> dict[str, Any
     async for event in _gather(lat, lng, city):
         if "__data__" in event:
             data = event["__data__"]
+    # If our own _gather got nothing, check whether the concurrent SSE _gather saved
+    # better community data while we were running.
+    if not data.get("crash_data") and not data.get("complaints_311") and not data.get("news"):
+        fresher = await cache.get_json(keys.scrape_key(lat, lng))
+        if fresher is not None:
+            return fresher
     return data

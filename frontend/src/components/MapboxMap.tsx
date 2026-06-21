@@ -10,7 +10,7 @@ interface Props {
   className?: string;
 }
 
-const ALAMEDA_CENTER: [number, number] = [-122.05, 37.65];
+const ALAMEDA_CENTER: [number, number] = [-122.25917423795075, 37.86870873221915];
 
 export default function MapboxMap({ picked, onPick, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,7 +28,7 @@ export default function MapboxMap({ picked, onPick, className }: Props) {
       container: containerRef.current,
       style: MAPBOX_STYLE,
       center: ALAMEDA_CENTER,
-      zoom: 10,
+      zoom: 15,
       pitch: 45,
       bearing: -17,
       antialias: true,
@@ -148,20 +148,6 @@ export default function MapboxMap({ picked, onPick, className }: Props) {
         .catch((e) => console.warn("Could not load alameda intersections:", e));
     });
 
-    // Fly to current location
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          // Only fly if within Alameda County bounding box
-          if (latitude > 37.45 && latitude < 37.92 && longitude > -122.38 && longitude < -121.47) {
-            map.flyTo({ center: [longitude, latitude], zoom: 12, duration: 1800, essential: true });
-          }
-        },
-        () => { /* denied — stay on county center */ },
-        { timeout: 5000 }
-      );
-    }
 
     mapRef.current = map;
     return () => {

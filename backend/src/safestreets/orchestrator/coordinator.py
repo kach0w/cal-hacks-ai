@@ -31,7 +31,9 @@ async def _render_and_persist(
 
         renders = await render_concept(intersection, findings)
         cached_payload["renders"] = renders
-        await cache.set_json(vision_key, cached_payload, ttl=86400)
+        has_corroboration = any(f.get("corroboration") for f in cached_payload.get("findings", []))
+        if has_corroboration:
+            await cache.set_json(vision_key, cached_payload, ttl=86400)
         log.info("Concept renders complete for %s", intersection.id)
     except Exception:
         log.exception("Background render failed for %s", intersection.id)

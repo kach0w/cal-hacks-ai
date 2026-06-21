@@ -83,7 +83,11 @@ async def analyze(req: AnalyzeRequest):
     vkey = keys.vision_key(req.lat, req.lng)
     result = await coordinator.analyze(intersection, data, vision_key=vkey)
     payload = result.model_dump(mode="json")
-    await cache.set_json(vkey, payload, ttl=keys.VISION_TTL)
+    has_corroboration = any(f.get("corroboration") for f in payload.get("findings", []))
+    # Only cache when we have real corroborations — avoids locking in a result from
+    # a run where crash/311/news agents all returned empty.
+    if has_corroboration:
+        await cache.set_json(vkey, payload, ttl=keys.VISION_TTL)
     return payload
 
 
