@@ -46,6 +46,31 @@ async def nearby_streets(lat: float, lng: float) -> list[str]:
     return routes
 
 
+async def geocode_address(address: str) -> dict | None:
+    """Forward-geocode a free-text address/intersection to a point.
+
+    For an intersection ('Cedar and San Pablo, Berkeley, CA') this returns the actual
+    corner; for a single street it returns the street's geometric center (imprecise).
+    Returns {lat, lng, formatted, location_type} or None.
+    """
+    key = get_settings().google_maps_api_key
+    if not key:
+        return None
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(_GEOCODE, params={"address": address, "key": key})
+        data = resp.json()
+    if data.get("status") != "OK" or not data.get("results"):
+        return None
+    top = data["results"][0]
+    loc = top["geometry"]["location"]
+    return {
+        "lat": loc["lat"],
+        "lng": loc["lng"],
+        "formatted": top.get("formatted_address"),
+        "location_type": top["geometry"].get("location_type"),
+    }
+
+
 def street_terms(streets: list[str]) -> list[str]:
     """Tokenize street names into lowercase keywords usable for slug/PDF matching.
 

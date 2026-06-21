@@ -136,14 +136,24 @@ async def _scrape_council_safety() -> list[dict[str, Any]]:
     """
     from safestreets.agents import council_311_agent as ca
 
-    topics = ["bicycle", "bike", "pedestrian", "traffic", "vision", "crosswalk", "safe", "speed"]
+    # whole-word topics — substring matching let 'vision' match 'pro-VISION' in tax items.
+    topics = ["bicycle", "bike", "pedestrian", "traffic", "vision zero", "crosswalk",
+              "safety", "speed", "pavement", "bike lane", "complete streets", "scooter"]
+
+    def _matches(title: str) -> bool:
+        low = title.lower()
+        return any(re.search(rf"\b{re.escape(t)}\b", low) for t in topics)
+
     async with httpx.AsyncClient() as client:
         clip_ids = await ca._recent_meeting_clip_ids(client, 12)
         candidates: list[tuple[str, str | None, str]] = []
+        seen: set[str] = set()
         for cid in clip_ids:
             for pdf in await ca._agenda_pdfs(client, cid):
                 date, title = ca._pdf_meta(pdf)
-                if any(t in title.lower() for t in topics):
+                key = title.lower().strip()
+                if _matches(title) and key not in seen:  # whole-word + dedupe
+                    seen.add(key)
                     candidates.append((pdf, date, title))
     candidates = candidates[:_PER_SITE_CAP]
     if not candidates:
@@ -166,6 +176,59 @@ async def _scrape_council_safety() -> list[dict[str, Any]]:
     return out
 
 
+# Berkeley street names used to extract a location from an article's text. Multi-word
+# names first so 'martin luther king' wins over a bare 'king'.
+_BERKELEY_STREETS = [
+    "martin luther king", "san pablo", "shattuck", "telegraph", "university", "adeline",
+    "ashby", "sacramento", "dwight", "bancroft", "durant", "hearst", "cedar", "gilman",
+    "hopkins", "channing", "allston", "milvia", "oxford", "college", "claremont",
+    "solano", "alcatraz", "parker", "derby", "russell", "grant", "sutter", "henry",
+    "fulton", "center", "addison", "virginia", "rose", "vine", "spruce", "euclid",
+    "bonar", "woolsey", "ward", "stuart", "blake", "carleton", "haste", "kittredge",
+    "delaware", "camelia", "page", "heinz", "carlotta", "marin", "the alameda",
+]
+
+
+def _extract_streets(text: str) -> list[str]:
+    """Distinct Berkeley street names mentioned in the text (whole-word, longest-first)."""
+    low = text.lower()
+    found: list[str] = []
+    for name in _BERKELEY_STREETS:
+        if re.search(rf"\b{re.escape(name)}\b", low) and name not in found:
+            found.append(name)
+    return found
+
+
+async def enrich_locations(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach a location to each item; DROP items with no extractable street.
+
+    - 2+ streets  -> 'intersection': forward-geocoded to the precise corner (lat/lng)
+    - 1 street    -> 'street': tagged with the street (no precise point; matches any
+                      intersection on that street)
+    The drop means the returned list is smaller but every item is locatable.
+    """
+    from safestreets.clients import google_maps
+
+    located: list[dict[str, Any]] = []
+    for it in items:
+        streets = _extract_streets(f"{it.get('title','')} {it.get('excerpt','')}")
+        if not streets:
+            continue  # no location -> dropped
+        out = {**it, "streets": streets}
+        if len(streets) >= 2:
+            geo = await google_maps.geocode_address(
+                f"{streets[0]} and {streets[1]}, Berkeley, CA"
+            )
+            out["location_type"] = "intersection"
+            if geo:
+                out["lat"], out["lng"] = geo["lat"], geo["lng"]
+                out["address"] = geo["formatted"]
+        else:
+            out["location_type"] = "street"
+        located.append(out)
+    return located
+
+
 async def fetch_street_safety() -> dict[str, Any]:
     """Scrape all four Berkeley civic sites for street-safety content via Browserbase.
 
@@ -179,6 +242,9 @@ async def fetch_street_safety() -> dict[str, Any]:
             _scrape_sitemap_site(client, "walkbikeberkeley.org", "https://walkbikeberkeley.org/sitemap.xml"),
         )
     council = await _scrape_council_safety()
+    # Locate the news items (drop ones with no extractable street, geocode intersections).
+    scanner = await enrich_locations(scanner)
+    bside = await enrich_locations(bside)
     result = {
         "berkeleyscanner": scanner,
         "berkeleyside": bside,
