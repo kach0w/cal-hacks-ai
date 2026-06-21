@@ -54,6 +54,7 @@ async def generate_image(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE", "TEXT"],
+                thinking_config=types.ThinkingConfig(thinking_budget=8192),
             ),
         )
         result = await asyncio.get_event_loop().run_in_executor(None, fn)
