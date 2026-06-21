@@ -88,13 +88,15 @@ async def analyze(req: AnalyzeRequest):
 
 @router.post("/council-email")
 async def council_email(req: CouncilEmailRequest):
-    """Draft a constituent email to the council member(s) for this intersection and return
-    it with a ready-to-send `.eml` (the council letter PDF attached).
+    """Draft a constituent email to the council member(s) for this intersection.
 
     Requires a prior /analyze for the same point (it reuses the cached findings + letter).
     The agent writes the subject + human-sounding body; recipients are resolved by
-    jurisdiction via Socrata. The frontend downloads the `.eml` to open in the user's mail
-    client. Cached so re-opening the dialog is instant and doesn't re-bill the LLM.
+    jurisdiction via Socrata. We return the raw pieces (subject/body/recipients) plus the
+    council letter PDF two ways: embedded in a ready-to-send `.eml` (desktop Outlook / Apple
+    Mail open it with the attachment intact) and standalone base64 (web Gmail/Outlook compose
+    links can't carry an attachment, so the frontend downloads the PDF for manual attach).
+    Cached so re-opening the dialog is instant and doesn't re-bill the LLM.
     """
     cached_email = await cache.get_json(keys.council_email_key(req.lat, req.lng))
     if cached_email is not None:
@@ -120,6 +122,8 @@ async def council_email(req: CouncilEmailRequest):
         "recipients": [c.model_dump() for c in draft.recipients],
         "eml_base64": base64.b64encode(eml.encode("utf-8")).decode(),
         "filename": pdf_name.replace(".pdf", ".eml"),
+        "pdf_base64": base64.b64encode(pdf_bytes).decode(),
+        "pdf_filename": pdf_name,
     }
     await cache.set_json(keys.council_email_key(req.lat, req.lng), payload, ttl=keys.VISION_TTL)
     return payload

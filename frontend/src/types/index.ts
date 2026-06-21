@@ -86,8 +86,10 @@ export interface CouncilEmailDraft {
   subject: string;
   body: string;
   recipients: CouncilContact[];
-  eml_base64: string;   // base64 of a ready-to-send .eml (PDF attached)
-  filename: string;
+  eml_base64: string;   // base64 of a ready-to-send .eml (PDF attached) — desktop mail apps
+  filename: string;     // .eml filename
+  pdf_base64: string;   // standalone PDF, for manual attach on web Gmail/Outlook
+  pdf_filename: string;
 }
 
 export interface ProgressEvent {
