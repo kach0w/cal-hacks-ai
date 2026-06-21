@@ -1,6 +1,7 @@
-"""Builds the social media post and the formal council report"""
+"""Builds the social media post and the formal council report in a single Claude call."""
 from __future__ import annotations
 import json
+from datetime import date
 from typing import Any
 
 from safestreets.clients.anthropic_client import get_anthropic, call_with_backoff
@@ -33,82 +34,75 @@ def _crash_summary(community_data: dict[str, Any]) -> str:
     return f"{total} crashes ({ped} pedestrian) recorded {year_range}"
 
 
-async def build_social_post(
+async def build_lastmile(
     findings: list[Finding],
     intersection: Intersection,
     community_data: dict[str, Any],
-) -> str:
+) -> tuple[str, str]:
+    """Single Claude call that returns (social_post, council_report)."""
+    client = get_anthropic()
+    settings = get_settings()
+
     confirmed = [f for f in findings if f.status == FindingStatus.CONFIRMED]
-    client = get_anthropic()
-    settings = get_settings()
-
-    prompt = f"""Write a short, urgent social media post (Twitter/Instagram length, under 280 characters if possible, max 400)
-advocating for safety fixes at this intersection. Make it human, specific, and actionable. However do not make it violent, accusatory,
-or aggresive. The tone should be concerned and urgent, but also hopeful and solution-oriented. Include at most 2 relevant hashtags at the end.
-
-Intersection: {intersection.address}
-Crash record: {_crash_summary(community_data)}
-Top confirmed problems and fixes:
-{_findings_summary(confirmed or findings[:2])}
-Council record: {json.dumps(community_data.get("council", []), default=str)}
-
-Rules:
-- Lead with the human cost, not the statistics
-- Name the specific fix and its cost
-- End with a call to action (contact city, attend meeting, share)
-- No hashtag spam — at most 2 relevant hashtags
-- No AI-sounding language"""
-
-    resp = await call_with_backoff(lambda: client.messages.create(
-        model=settings.claude_text_model,
-        max_tokens=300,
-        messages=[{"role": "user", "content": prompt}],
-    ))
-    return "".join(b.text for b in resp.content if b.type == "text").strip()
-
-
-async def build_council_report(
-    findings: list[Finding],
-    intersection: Intersection,
-    community_data: dict[str, Any],
-) -> str:
-    client = get_anthropic()
-    settings = get_settings()
-
     council_records = community_data.get("council", [])
     accountability_note = (
         f"This corridor was raised in council minutes on {council_records[0]['date']} with no recorded action."
         if council_records else "No prior council record found."
     )
-
-    from datetime import date
     today = date.today().strftime("%B %d, %Y")
 
-    prompt = f"""Write a formal letter to submit to a city council transportation committee requesting pedestrian safety improvements. Format it exactly as a real letter — no markdown, no headers with pound signs, no bullet asterisks. Use plain prose paragraphs with blank lines between them. Do not use violent language or accusatory language. The tone should be professional, concerned, and solution-oriented.
+    prompt = f"""You must produce TWO outputs for a street safety analysis. Return them as a JSON object with keys "social_post" and "council_report". No other text.
 
-The letter structure should be:
-- Date line: {today}
-- Blank line
+INTERSECTION: {intersection.address}
+CRASH RECORD: {_crash_summary(community_data)}
+FINDINGS:
+{_findings_summary(confirmed or findings[:3])}
+COUNCIL: {accountability_note}
+
+=== OUTPUT 1: social_post ===
+A short, urgent social media post (under 280 chars, max 400). Human, specific, actionable.
+Tone: concerned and hopeful, not violent or accusatory. At most 2 hashtags at the end.
+Rules: lead with human cost; name the specific fix and cost; end with a call to action; no AI-sounding language.
+
+=== OUTPUT 2: council_report ===
+A formal letter to the city council transportation committee. Plain text only — no markdown, no asterisks, no pound signs.
+Structure:
+- Date: {today}
 - To: City Council Transportation Committee, City of Berkeley
 - From: SafeStreets Community Safety Initiative
 - Re: Pedestrian Safety Hazards at {intersection.address}
-- Blank line
-- Opening paragraph: purpose of the letter and urgency
-- Body paragraphs: one per finding, describing the observed condition, the evidence or data supporting it, and the recommended intervention with estimated cost and applicable funding program (SS4A, HSIP, or capital work order)
-- Crash record paragraph: {_crash_summary(community_data)}
+- Opening paragraph stating purpose and urgency
+- One body paragraph per finding with condition, evidence, recommended intervention and cost
+- Crash record paragraph
 - Prior notice paragraph: {accountability_note}
-- Closing paragraph: specific numbered requests (written out as "First, ... Second, ... Third, ...")
+- Closing with numbered requests ("First, ... Second, ... Third, ...")
 - Sign-off: Respectfully submitted, SafeStreets Safety Analysis System
+Tone: professional, concerned, solution-oriented. No violent or accusatory language.
 
-Intersection: {intersection.address}
-Findings:
-{_findings_summary(findings)}
-
-Write only the letter text. No markdown formatting whatsoever. No asterisks, no pound signs, no dashes as bullets. Plain text letter."""
+Return ONLY valid JSON: {{"social_post": "...", "council_report": "..."}}"""
 
     resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_text_model,
-        max_tokens=1200,
+        max_tokens=1500,
         messages=[{"role": "user", "content": prompt}],
     ))
-    return "".join(b.text for b in resp.content if b.type == "text").strip()
+    text = "".join(b.text for b in resp.content if b.type == "text").strip()
+
+    try:
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        data = json.loads(text[start:end])
+        return data.get("social_post", ""), data.get("council_report", "")
+    except Exception:
+        return text, ""
+
+
+# Keep old names as thin wrappers so nothing else breaks
+async def build_social_post(findings, intersection, community_data) -> str:
+    post, _ = await build_lastmile(findings, intersection, community_data)
+    return post
+
+
+async def build_council_report(findings, intersection, community_data) -> str:
+    _, report = await build_lastmile(findings, intersection, community_data)
+    return report

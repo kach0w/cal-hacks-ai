@@ -8,7 +8,7 @@ from typing import Any
 
 from safestreets.intervention import funding_match, matcher
 from safestreets.lastmile import accountability, coalition
-from safestreets.lastmile.ask import build_council_report, build_social_post
+from safestreets.lastmile.ask import build_lastmile
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
 from safestreets.render import annotate
@@ -36,10 +36,9 @@ async def analyze(intersection: Intersection, community_data: dict[str, Any]) ->
         coalition_count=await coalition.count(intersection.id),
     )
 
-    # Stage 4: last-mile packet (non-fatal)
+    # Stage 4: last-mile packet — single call for both outputs (non-fatal)
     try:
-        result.social_post = await build_social_post(findings, intersection, community_data)
-        result.council_report = await build_council_report(findings, intersection, community_data)
+        result.social_post, result.council_report = await build_lastmile(findings, intersection, community_data)
     except Exception:
         pass
 

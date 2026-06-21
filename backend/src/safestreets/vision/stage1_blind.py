@@ -61,10 +61,13 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
     client = get_anthropic()
 
     # IMPORTANT: only imagery goes in. No community text.
-    # Fetch all images in parallel to cut latency.
-    encoded = await asyncio.gather(*[_encode_image(img.url) for img in intersection.images])
+    # Use satellite + N/S only (3 images) to keep input tokens manageable.
+    from safestreets.models.intersection import ViewDirection
+    _KEEP = {ViewDirection.SATELLITE, ViewDirection.NORTH, ViewDirection.SOUTH}
+    images = [img for img in intersection.images if img.direction in _KEEP]
+    encoded = await asyncio.gather(*[_encode_image(img.url) for img in images])
     content: list[dict] = [{"type": "text", "text": _PROMPT}]
-    for img, enc in zip(intersection.images, encoded):
+    for img, enc in zip(images, encoded):
         date_note = f" (captured {img.capture_date})" if img.capture_date else ""
         content.append({"type": "text", "text": f"[{img.direction.value}{date_note}]"})
         content.append(enc)

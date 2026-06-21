@@ -23,8 +23,8 @@ class Settings(BaseSettings):
 
     # anthropic
     anthropic_api_key: str = ""
-    claude_vision_model: str = "claude-opus-4-8"
-    claude_text_model: str = "claude-sonnet-4-6"
+    claude_vision_model: str = "claude-haiku-4-5-20251001"
+    claude_text_model: str = "claude-haiku-4-5-20251001"
 
     # browserbase
     browserbase_api_key: str = ""
