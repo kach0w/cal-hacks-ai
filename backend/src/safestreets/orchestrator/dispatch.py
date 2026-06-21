@@ -35,6 +35,7 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     from safestreets.agents import (
         council_311_agent,
         image_fetcher,
+        news_agent,
         structured_data,
     )
     from safestreets.clients.google_maps import reverse_geocode as google_maps_reverse_geocode
@@ -54,16 +55,23 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
 
     # Run images, crash records, and 311 in parallel — they're all independent network calls.
-    yield {"agent": "orchestrator", "msg": "fetching images + crash + 311 in parallel"}
+    from safestreets.clients.google_maps import street_terms as make_terms
+    terms = make_terms(streets)
+
+    yield {"agent": "orchestrator", "msg": "fetching images + crash + 311 + news in parallel"}
     images_task = asyncio.ensure_future(_with_retry(lambda: image_fetcher.fetch_images(lat, lng)))
     crash_task  = asyncio.ensure_future(_with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)))
     compl_task  = asyncio.ensure_future(_with_retry(lambda: council_311_agent.fetch_311(lat, lng)))
+    news_task   = asyncio.ensure_future(_with_retry(lambda: news_agent.fetch_news(lat, lng, city, terms)))
 
-    images_raw, crash, complaints = await asyncio.gather(images_task, crash_task, compl_task, return_exceptions=True)
+    images_raw, crash, complaints, news = await asyncio.gather(
+        images_task, crash_task, compl_task, news_task, return_exceptions=True
+    )
     images     = images_raw if isinstance(images_raw, list) else []
     crash      = crash      if isinstance(crash,      list) else []
     complaints = complaints if isinstance(complaints, list) else []
-    yield {"agent": "orchestrator", "msg": "data ready", "images": len(images), "crashes": len(crash), "complaints": len(complaints)}
+    news       = news       if isinstance(news,       list) else []
+    yield {"agent": "orchestrator", "msg": "data ready", "images": len(images), "crashes": len(crash), "complaints": len(complaints), "news": len(news)}
 
     data = {
         "images": [img.model_dump(mode="json") for img in images],
@@ -71,6 +79,7 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         "city": geo_city or city or "",
         "crash_data": crash,
         "complaints_311": complaints,
+        "news": news,
     }
     await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
     yield {"__data__": data}
