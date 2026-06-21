@@ -94,52 +94,6 @@ ${html}
     w.print();
   }
 
-  return (
-    <>
-      <div
-        style={{
-          border: "2px solid #2c3060",
-          background: "#e8e4d4",
-          position: "relative",
-          height: 300,
-          overflow: "hidden",
-        }}
-      >
-        <div className="p-4" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 11, lineHeight: 2, color: "#1a1f3d" }}>
-          {paragraphs.map((para, i) => (
-            <p key={i} style={{ margin: "0 0 1.2em 0" }}>{para}</p>
-          ))}
-        </div>
-        {!open && (
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, #e8e4d4, transparent)", pointerEvents: "none" }} />
-        )}
-      </div>
-
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          onClick={() => setOpen(!open)}
-          className="btn-ghost"
-          style={{ fontSize: 8, padding: "8px 12px" }}
-        >
-          {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {open ? "COLLAPSE" : "READ FULL"}
-        </button>
-        <button
-          onClick={printReport}
-          className="btn-primary"
-          style={{ fontSize: 8, padding: "8px 12px" }}
-        >
-          <Printer className="h-3 w-3" />
-          Export PDF
-        </button>
-      </div>
-
-      <EmailCouncil report={report} />
-    </>
-  );
-}
-
-function EmailCouncil({ report }: { report: string }) {
   function sendEmail() {
     const subject = encodeURIComponent("Pedestrian Safety Concerns — SafeStreets Analysis");
     const body = encodeURIComponent(report);
@@ -147,11 +101,44 @@ function EmailCouncil({ report }: { report: string }) {
   }
 
   return (
-    <div className="mt-3">
-      <button onClick={sendEmail} className="btn-primary" style={{ fontSize: 8, padding: "8px 12px" }}>
-        <Mail className="h-3 w-3" />
-        EMAIL COUNCIL
-      </button>
+    <div style={{ border: "3px solid #2c3060", background: "#e8e4d4", height: 300, display: "flex", flexDirection: "column" }}>
+      {/* Letter content */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", position: "relative" }}>
+        <div style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 10, lineHeight: 2, color: "#1a1f3d" }}>
+          {paragraphs.map((para, i) => (
+            <p key={i} style={{ margin: "0 0 1.2em 0" }}>{para}</p>
+          ))}
+        </div>
+        {!open && (
+          <div style={{ position: "sticky", bottom: 0, left: 0, right: 0, height: 48, background: "linear-gradient(to top, #e8e4d4, transparent)", pointerEvents: "none" }} />
+        )}
+      </div>
+
+      {/* Action bar — mirrors tweet card */}
+      <div style={{ borderTop: "2px solid #2c3060", padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+        <button
+          onClick={() => setOpen(!open)}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", padding: "4px 6px" }}
+        >
+          {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {open ? "COLLAPSE" : "READ FULL"}
+        </button>
+        <button
+          onClick={sendEmail}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", padding: "4px 6px" }}
+        >
+          <Mail className="h-3 w-3" />
+          EMAIL
+        </button>
+        <button
+          onClick={printReport}
+          className="btn-primary"
+          style={{ marginLeft: "auto", fontSize: 7, padding: "5px 10px" }}
+        >
+          <Printer className="h-3 w-3" />
+          EXPORT PDF
+        </button>
+      </div>
     </div>
   );
 }
