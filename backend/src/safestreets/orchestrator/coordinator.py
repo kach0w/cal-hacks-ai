@@ -10,7 +10,7 @@ from typing import Any
 
 from safestreets.intervention import funding_match, matcher
 from safestreets.lastmile import accountability, coalition
-from safestreets.lastmile.ask import build_council_report, build_reddit_post, build_social_post
+from safestreets.lastmile.ask import build_lastmile, build_reddit_post
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
 from safestreets.vision import stage1_blind, stage2_corroborate
@@ -63,15 +63,13 @@ async def analyze(
         coalition_count=await coalition.count(intersection.id),
     )
 
-    # Stage 4: last-mile packet (non-fatal)
+    # Stage 4: social post + council letter in one Claude call (non-fatal)
     try:
-        result.social_post = await build_social_post(findings, intersection, community_data)
-        result.council_report = await build_council_report(findings, intersection, community_data)
+        result.social_post, result.council_report = await build_lastmile(findings, intersection, community_data)
     except Exception:
-        pass
+        log.exception("Last-mile generation failed")
 
-    # Reddit post for the street's local subreddit (independently non-fatal: a failure here
-    # shouldn't drop the tweet / council letter built above).
+    # Reddit post (separate call, independently non-fatal)
     try:
         result.reddit_post = await build_reddit_post(findings, intersection, community_data)
     except Exception:
@@ -88,12 +86,6 @@ async def analyze(
             result.annotated_image_url = "data:image/jpeg;base64," + base64.b64encode(r.content).decode()
         except Exception:
             log.warning("Could not fetch satellite image")
-
-    # Stage 4: social post + council letter (single Claude call)
-    try:
-        result.social_post, result.council_report = await build_lastmile(findings, intersection, community_data)
-    except Exception:
-        log.exception("Last-mile generation failed")
 
     # Stage 5: Gemini concept renders — fire and forget, patch cache when done
     if vision_key:

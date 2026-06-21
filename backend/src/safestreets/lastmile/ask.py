@@ -2,17 +2,16 @@
 from __future__ import annotations
 import json
 import re
+from datetime import date
 from typing import Any
 
 from safestreets.clients import google_maps
-from safestreets.clients.anthropic_client import get_anthropic
+from safestreets.clients.anthropic_client import call_with_backoff, get_anthropic
 from safestreets.config import get_settings
 from safestreets.models.analysis import RedditPost
 from safestreets.models.finding import Finding, FindingStatus
 from safestreets.models.intersection import Intersection
 
-# Cities whose subreddit isn't just the slugified name. Everything else slugifies
-# (e.g. 'Berkeley' -> r/berkeley); this map fixes the well-known exceptions.
 _CITY_SUBREDDITS = {
     "new york": "nyc",
     "new york city": "nyc",
@@ -29,7 +28,6 @@ _CITY_SUBREDDITS = {
 
 
 def subreddit_for_city(city: str | None) -> str:
-    """Map a city name to its local subreddit name (bare, no 'r/')."""
     key = (city or "").strip().lower()
     if key in _CITY_SUBREDDITS:
         return _CITY_SUBREDDITS[key]
@@ -65,100 +63,8 @@ async def build_lastmile(
     findings: list[Finding],
     intersection: Intersection,
     community_data: dict[str, Any],
-) -> str:
-    confirmed = [f for f in findings if f.status == FindingStatus.CONFIRMED]
-    client = get_anthropic()
-    settings = get_settings()
-
-    prompt = f"""Write a short, urgent social media post (Twitter/Instagram length, under 280 characters if possible, max 400)
-advocating for safety fixes at this intersection. Make it human, specific, and actionable — not generic.
-
-Intersection: {intersection.address}
-Crash record: {_crash_summary(community_data)}
-Top confirmed problems and fixes:
-{_findings_summary(confirmed or findings[:2])}
-Council record: {json.dumps(community_data.get("council", []), default=str)}
-
-Rules:
-- Lead with the human cost, not the statistics
-- Name the specific fix and its cost
-- End with a call to action (contact city, attend meeting, share)
-- No hashtag spam — at most 2 relevant hashtags
-- No AI-sounding language"""
-
-    resp = await client.messages.create(
-        model=settings.claude_text_model,
-        max_tokens=300,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return "".join(b.text for b in resp.content if b.type == "text").strip()
-
-
-_JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
-
-
-async def build_reddit_post(
-    findings: list[Finding],
-    intersection: Intersection,
-    community_data: dict[str, Any],
-) -> RedditPost:
-    """A post for the city's local subreddit, written like a real fed-up neighbor — not a PSA.
-
-    The subreddit is chosen from the street's actual city (reverse-geocoded when the
-    intersection didn't carry one), so the post lands in the community that can act on it.
-    """
-    client = get_anthropic()
-    settings = get_settings()
-
-    city = intersection.city or await google_maps.reverse_city(intersection.lat, intersection.lng) or settings.demo_city
-    subreddit = subreddit_for_city(city)
-
-    confirmed = [f for f in findings if f.status == FindingStatus.CONFIRMED]
-
-    prompt = f"""Write a Reddit post for r/{subreddit} from a real person who lives in {city} and is worried about a dangerous intersection in their neighborhood. It should read like an actual frustrated/concerned local typed it out — NOT a press release, NOT a PSA, NOT marketing.
-
-Intersection: {intersection.address}
-Crash record: {_crash_summary(community_data)}
-What's wrong and the fixes that would help:
-{_findings_summary(confirmed or findings[:2])}
-
-Voice and style rules:
-- First person, casual, the way people actually post on a city subreddit. Contractions, plain words.
-- Open with a real human hook (e.g. "Does anyone else avoid...", "I almost got hit at...", "Am I crazy or is ... a death trap").
-- Mention the specific intersection and one or two concrete problems. You can cite the crash number once, naturally, but don't dump statistics.
-- Ask the community if others have noticed / had close calls, and mention you're thinking of contacting the city or council.
-- NO hashtags. NO emoji spam (one is fine, none is better). NO em-dashes. NO corporate or AI-sounding phrasing like "moreover", "furthermore", "in conclusion", "as a concerned resident", "let's work together".
-- Keep the title short and natural, like a real Reddit title (no clickbait, no ALL CAPS).
-- Body 80-160 words.
-
-Return ONLY a JSON object: {{"title": "...", "body": "..."}} with the body as a single string (use \\n\\n between paragraphs if needed)."""
-
-    resp = await client.messages.create(
-        model=settings.claude_text_model,
-        max_tokens=600,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = "".join(b.text for b in resp.content if b.type == "text").strip()
-
-    title = f"Is {intersection.address} as dangerous as it feels?"
-    body = text
-    m = _JSON_RE.search(text)
-    if m:
-        try:
-            data = json.loads(m.group(0))
-            title = str(data.get("title") or title).strip()
-            body = str(data.get("body") or text).strip()
-        except json.JSONDecodeError:
-            pass
-
-    return RedditPost(subreddit=subreddit, title=title, body=body)
-
-
-async def build_council_report(
-    findings: list[Finding],
-    intersection: Intersection,
-    community_data: dict[str, Any],
-) -> str:
+) -> tuple[str, str]:
+    """Single Claude call returning (social_post, council_report)."""
     client = get_anthropic()
     settings = get_settings()
 
@@ -216,12 +122,54 @@ Return ONLY valid JSON: {{"social_post": "...", "council_report": "..."}}"""
         return text, ""
 
 
-# Keep old names as thin wrappers so nothing else breaks
-async def build_social_post(findings, intersection, community_data) -> str:
-    post, _ = await build_lastmile(findings, intersection, community_data)
-    return post
+_JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
 
 
-async def build_council_report(findings, intersection, community_data) -> str:
-    _, report = await build_lastmile(findings, intersection, community_data)
-    return report
+async def build_reddit_post(
+    findings: list[Finding],
+    intersection: Intersection,
+    community_data: dict[str, Any],
+) -> RedditPost:
+    client = get_anthropic()
+    settings = get_settings()
+
+    city = intersection.city or await google_maps.reverse_city(intersection.lat, intersection.lng) or settings.demo_city
+    subreddit = subreddit_for_city(city)
+    confirmed = [f for f in findings if f.status == FindingStatus.CONFIRMED]
+
+    prompt = f"""Write a Reddit post for r/{subreddit} from a real person who lives in {city} and is worried about a dangerous intersection in their neighborhood. It should read like an actual frustrated/concerned local typed it out — NOT a press release, NOT a PSA, NOT marketing.
+
+Intersection: {intersection.address}
+Crash record: {_crash_summary(community_data)}
+What's wrong and the fixes that would help:
+{_findings_summary(confirmed or findings[:2])}
+
+Voice and style rules:
+- First person, casual, the way people actually post on a city subreddit. Contractions, plain words.
+- Open with a real human hook (e.g. "Does anyone else avoid...", "I almost got hit at...", "Am I crazy or is ... a death trap").
+- Mention the specific intersection and one or two concrete problems. You can cite the crash number once, naturally, but don't dump statistics.
+- Ask the community if others have noticed / had close calls, and mention you're thinking of contacting the city or council.
+- NO hashtags. NO emoji spam (one is fine, none is better). NO em-dashes. NO corporate or AI-sounding phrasing.
+- Keep the title short and natural. Body 80-160 words.
+
+Return ONLY a JSON object: {{"title": "...", "body": "..."}}"""
+
+    resp = await client.messages.create(
+        model=settings.claude_text_model,
+        max_tokens=600,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = "".join(b.text for b in resp.content if b.type == "text").strip()
+
+    title = f"Is {intersection.address} as dangerous as it feels?"
+    body = text
+    m = _JSON_RE.search(text)
+    if m:
+        try:
+            data = json.loads(m.group(0))
+            title = str(data.get("title") or title).strip()
+            body = str(data.get("body") or text).strip()
+        except json.JSONDecodeError:
+            pass
+
+    return RedditPost(subreddit=subreddit, title=title, body=body)
