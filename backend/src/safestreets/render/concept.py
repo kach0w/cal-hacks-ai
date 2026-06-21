@@ -22,25 +22,17 @@ _VIEW_TO_DIRECTION = {
 
 def _fix_prompt(finding: Finding) -> str:
     fix = finding.intervention.name if finding.intervention else "general pedestrian safety improvements"
+    zone = finding.condition.zone.value
     return (
-        f"This is a photo of an urban intersection. "
-        f"The observed safety issue is: {finding.condition.observation}. "
-        f"Edit the image to show the fix applied: {fix}. "
-        f"Keep the scene photorealistic. Label nothing."
+        f"Photorealistic aerial satellite view of an urban intersection in Berkeley, California. "
+        f"The {zone} zone shows: {finding.condition.observation}. "
+        f"Show the intersection AFTER the safety fix has been applied: {fix}. "
+        f"Bright daylight, top-down view, high resolution, realistic street markings and infrastructure."
     )
 
 
 async def _render_one(finding: Finding, source_url: str | None, source_view: str) -> dict:
-    source_bytes = None
-    source_mime = "image/jpeg"
-    if source_url:
-        try:
-            source_bytes = await fetch_image_bytes(source_url)
-            source_mime = _VIEW_TO_MIME.get(source_view, "image/jpeg")
-        except Exception:
-            pass
-
-    after_bytes = await generate_image(_fix_prompt(finding), source_bytes, source_mime)
+    after_bytes = await generate_image(_fix_prompt(finding))
     after_url = None
     if after_bytes:
         after_url = "data:image/png;base64," + base64.b64encode(after_bytes).decode()

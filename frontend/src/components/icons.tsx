@@ -163,7 +163,31 @@ export const Building = (p: IconProps) => (
 );
 
 export const ChevronDown = (p: IconProps) => (
+  <Base {...p}><path d="m6 9 6 6 6-6" /></Base>
+);
+
+export const ChevronUp = (p: IconProps) => (
+  <Base {...p}><path d="m18 15-6-6-6 6" /></Base>
+);
+
+export const Copy = (p: IconProps) => (
   <Base {...p}>
-    <path d="m6 9 6 6 6-6" />
+    <rect x="9" y="9" width="13" height="13" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </Base>
+);
+
+export const FileText = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+  </Base>
+);
+
+export const Printer = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M6 9V2h12v7" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
   </Base>
 );

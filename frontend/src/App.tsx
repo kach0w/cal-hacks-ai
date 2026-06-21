@@ -1,6 +1,5 @@
 import { useState } from "react";
 import MapView from "./components/MapView";
-import AgentFeed from "./components/AgentFeed";
 import AnnotatedImage from "./components/AnnotatedImage";
 import LastMilePanel from "./components/LastMilePanel";
 import BeforeAfterPanel from "./components/BeforeAfterPanel";
@@ -41,16 +40,11 @@ export default function App() {
 
       <main
         key={`${selected.lat},${selected.lng}`}
-        className="mx-auto grid max-w-7xl gap-5 px-5 py-6 lg:grid-cols-[minmax(0,1fr)_380px]"
+        className="mx-auto max-w-4xl space-y-5 px-5 py-6"
       >
-        <div className="min-w-0 space-y-5">
-          <AnnotatedImage lat={selected.lat} lng={selected.lng} />
-          <BeforeAfterPanel lat={selected.lat} lng={selected.lng} />
-          <LastMilePanel lat={selected.lat} lng={selected.lng} />
-        </div>
-        <aside className="lg:sticky lg:top-[4.75rem] lg:h-[calc(100vh-6.5rem)]">
-          <AgentFeed lat={selected.lat} lng={selected.lng} />
-        </aside>
+        <AnnotatedImage lat={selected.lat} lng={selected.lng} />
+        <BeforeAfterPanel lat={selected.lat} lng={selected.lng} />
+        <LastMilePanel lat={selected.lat} lng={selected.lng} />
       </main>
     </div>
   );

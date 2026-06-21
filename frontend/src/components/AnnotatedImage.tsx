@@ -13,14 +13,20 @@ import { MapPin, Camera, Eye } from "./icons";
  */
 
 const MARKER: Record<FindingStatus, string> = {
-  CONFIRMED: "bg-confirmed text-ink-950 ring-confirmed/40",
-  CANDIDATE: "bg-candidate text-ink-950 ring-candidate/40",
-  REPORTED: "bg-reported text-ink-950 ring-reported/40",
+  CONFIRMED: "bg-green-500 text-white ring-green-300",
+  CANDIDATE: "bg-amber-400 text-white ring-amber-200",
+  REPORTED: "bg-amber-400 text-white ring-amber-200",
 };
 const RING: Record<FindingStatus, string> = {
-  CONFIRMED: "bg-confirmed/40",
-  CANDIDATE: "bg-candidate/40",
-  REPORTED: "bg-reported/40",
+  CONFIRMED: "bg-green-400/40",
+  CANDIDATE: "bg-amber-400/40",
+  REPORTED: "bg-amber-400/40",
+};
+
+const LABEL: Record<FindingStatus, string> = {
+  CONFIRMED: "Confirmed",
+  CANDIDATE: "Problem",
+  REPORTED: "Problem",
 };
 
 const CORNERS = [
@@ -130,9 +136,8 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
 
         {/* Legend */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500">
-          <Legend color="bg-confirmed" label="Confirmed — seen & corroborated" />
-          <Legend color="bg-candidate" label="Candidate — seen, not yet corroborated" />
-          <Legend color="bg-reported" label="Reported — not visually confirmable" />
+          <Legend color="bg-green-500" label="Confirmed — seen & corroborated" />
+          <Legend color="bg-amber-400" label="Problem — identified, needs review" />
         </div>
       </div>
 

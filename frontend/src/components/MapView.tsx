@@ -38,6 +38,7 @@ export default function MapView({
 }: {
   onSelect: (p: { lat: number; lng: number }) => void;
 }) {
+  const DEMO_COORDS = "37.86870873221915, -122.25917423795075";
   const [coords, setCoords] = useState("");
   const [picked, setPicked] = useState<GeoPlace | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -102,12 +103,23 @@ export default function MapView({
             className="mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-2.5 sm:flex-row"
             onSubmit={handleSearch}
           >
-            <input
-              value={coords}
-              onChange={(e) => setCoords(e.target.value)}
-              placeholder="lat, lng — e.g. 37.86870, -122.25917"
-              className="flex-1 rounded-xl border border-gray-200 bg-white py-3.5 px-4 text-[15px] text-gray-900 placeholder:text-gray-500 backdrop-blur-xl transition-colors focus:border-brand/50"
-            />
+            <div className="relative flex-1">
+              <input
+                value={coords}
+                onChange={(e) => setCoords(e.target.value)}
+                placeholder={DEMO_COORDS}
+                className="w-full rounded-xl border border-gray-200 bg-white py-3.5 px-4 text-[15px] text-gray-900 placeholder:text-gray-400 transition-colors focus:border-amber-400 focus:outline-none"
+              />
+              {!coords && (
+                <button
+                  type="button"
+                  onClick={() => setCoords(DEMO_COORDS)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-gray-100 px-2.5 py-1 text-xs text-gray-500 hover:bg-gray-200"
+                >
+                  Use demo
+                </button>
+              )}
+            </div>
             <button type="submit" className="btn-primary py-3.5">
               Analyze <ArrowRight className="h-4 w-4" />
             </button>

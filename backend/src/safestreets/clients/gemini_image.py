@@ -1,7 +1,7 @@
-"""Gemini image generation/editing client.
+"""Gemini Imagen 4 image generation client.
 
-If source_image_bytes is provided, sends it alongside the prompt for image editing.
-Otherwise generates from text only. Returns raw PNG bytes or None on failure.
+Uses imagen-4.0-generate-001 via generate_images (predict endpoint).
+Falls back gracefully if the key is missing or generation fails.
 """
 from __future__ import annotations
 
@@ -46,36 +46,14 @@ async def generate_image(
     client = genai.Client(api_key=key)
 
     try:
-        if source_image_bytes:
-            # Image editing: send source photo + fix instruction
-            contents = [
-                types.Part.from_bytes(data=source_image_bytes, mime_type=source_mime),
-                types.Part.from_text(text=prompt),
-            ]
-            fn = partial(
-                client.models.generate_content,
-                model="gemini-2.5-flash-image",
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_modalities=["IMAGE", "TEXT"],
-                ),
-            )
-            result = await asyncio.get_event_loop().run_in_executor(None, fn)
-            for part in result.candidates[0].content.parts:
-                if part.inline_data:
-                    return part.inline_data.data
-            log.error("Gemini returned no image parts")
-            return None
-        else:
-            # Text-to-image via Imagen 4
-            fn = partial(
-                client.models.generate_images,
-                model="imagen-4.0-generate-001",
-                prompt=prompt,
-                config=types.GenerateImagesConfig(number_of_images=1),
-            )
-            result = await asyncio.get_event_loop().run_in_executor(None, fn)
-            return result.generated_images[0].image.image_bytes
+        fn = partial(
+            client.models.generate_images,
+            model="imagen-4.0-generate-001",
+            prompt=prompt,
+            config=types.GenerateImagesConfig(number_of_images=1),
+        )
+        result = await asyncio.get_event_loop().run_in_executor(None, fn)
+        return result.generated_images[0].image.image_bytes
     except Exception:
         log.exception("Gemini image generation failed")
         return None
