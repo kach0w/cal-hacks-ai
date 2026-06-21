@@ -49,12 +49,11 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
           {result?.annotated_image_url ? (
             <img
               src={result.annotated_image_url}
-              alt={`Annotated satellite view of ${result.intersection.address}`}
+              alt={`Satellite view of ${result.intersection.address}`}
               className="h-full w-full object-cover"
             />
           ) : (
             <div className="absolute inset-0 bg-grid-faint [background-size:32px_32px]">
-              {/* Canonical intersection frame: the two legs */}
               <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-gray-50" />
               <div className="absolute top-1/2 left-0 h-16 w-full -translate-y-1/2 bg-gray-50" />
               {loading && (

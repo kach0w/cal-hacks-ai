@@ -35,42 +35,56 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     from safestreets.agents import (
         council_311_agent,
         image_fetcher,
+        news_agent,
         structured_data,
     )
+    from safestreets.clients.google_maps import reverse_geocode as google_maps_reverse_geocode
     from safestreets.clients import google_maps
     from safestreets.config import get_settings
 
     city = city or get_settings().demo_city  # demo scope lives in one config knob
     yield {"agent": "orchestrator", "msg": "locating intersection"}
     streets: list[str] = []
+    geo_city = ""
     try:
-        streets = await google_maps.nearby_streets(lat, lng)
+        geo = await google_maps_reverse_geocode(lat, lng)
+        streets = geo["streets"]
+        geo_city = geo["city"]
     except Exception:  # noqa: BLE001
         streets = []
     yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
 
-    # Per-intersection data is the GEO-filtered hard evidence only: imagery, crashes,
-    # 311. City-wide news + council street-safety coverage lives in the civic key
-    # (ss:civic:<city>:street-safety), scraped once for the whole city — not per corner.
-    yield {"agent": "images", "msg": "satellite + street view"}
-    images = await _with_retry(lambda: image_fetcher.fetch_images(lat, lng)) or []
-    yield {"agent": "images", "msg": "done", "count": len(images)}
+    # Run images, crash records, and 311 in parallel — they're all independent network calls.
+    from safestreets.clients.google_maps import street_terms as make_terms
+    terms = make_terms(streets)
 
-    yield {"agent": "structured", "msg": "crash records"}
-    crash = await _with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)) or []
-    yield {"agent": "structured", "msg": "done", "count": len(crash)}
+    yield {"agent": "orchestrator", "msg": "fetching images + crash + 311 + news in parallel"}
+    images_task = asyncio.ensure_future(_with_retry(lambda: image_fetcher.fetch_images(lat, lng)))
+    crash_task  = asyncio.ensure_future(_with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)))
+    compl_task  = asyncio.ensure_future(_with_retry(lambda: council_311_agent.fetch_311(lat, lng)))
+    news_task   = asyncio.ensure_future(_with_retry(lambda: news_agent.fetch_news(lat, lng, city, terms)))
 
-    yield {"agent": "complaints_311", "msg": "311 complaints"}
-    complaints = await _with_retry(lambda: council_311_agent.fetch_311(lat, lng)) or []
-    yield {"agent": "complaints_311", "msg": "done", "count": len(complaints)}
+    images_raw, crash, complaints, news = await asyncio.gather(
+        images_task, crash_task, compl_task, news_task, return_exceptions=True
+    )
+    images     = images_raw if isinstance(images_raw, list) else []
+    crash      = crash      if isinstance(crash,      list) else []
+    complaints = complaints if isinstance(complaints, list) else []
+    news       = news       if isinstance(news,       list) else []
+    yield {"agent": "orchestrator", "msg": "data ready", "images": len(images), "crashes": len(crash), "complaints": len(complaints), "news": len(news)}
 
     data = {
         "images": [img.model_dump(mode="json") for img in images],
         "streets": streets,
+        "city": geo_city or city or "",
         "crash_data": crash,
         "complaints_311": complaints,
+        "news": news,
     }
-    await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
+    # Only cache scrape if we got some community data — avoids poisoning the cache
+    # with empty agent results that would block all future re-fetches.
+    if crash or complaints or news:
+        await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
     yield {"__data__": data}
 
 
@@ -92,7 +106,13 @@ async def run_pipeline(lat: float, lng: float, city: str | None) -> AsyncIterato
 
 
 async def gather_data(lat: float, lng: float, city: str | None) -> dict[str, Any]:
-    """Non-streaming gather used by POST /analyze. Cache-first, then agents."""
+    """Non-streaming gather used by POST /analyze. Cache-first, then agents.
+
+    POST /analyze and the SSE stream both start concurrently on first load, so both
+    may call _gather simultaneously. If our _gather comes back with empty community
+    data, the SSE stream's _gather may have saved better data in the meantime — check
+    the scrape_key one more time before handing empty data to the analysis pipeline.
+    """
     cached = await cache.get_json(keys.scrape_key(lat, lng))
     if cached is not None:
         return cached
@@ -100,4 +120,10 @@ async def gather_data(lat: float, lng: float, city: str | None) -> dict[str, Any
     async for event in _gather(lat, lng, city):
         if "__data__" in event:
             data = event["__data__"]
+    # If our own _gather got nothing, check whether the concurrent SSE _gather saved
+    # better community data while we were running.
+    if not data.get("crash_data") and not data.get("complaints_311") and not data.get("news"):
+        fresher = await cache.get_json(keys.scrape_key(lat, lng))
+        if fresher is not None:
+            return fresher
     return data

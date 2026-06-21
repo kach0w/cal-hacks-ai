@@ -71,17 +71,23 @@ async def analyze(req: AnalyzeRequest):
         return cached
 
     data = await gather_data(req.lat, req.lng, req.city)
+    city = req.city or data.get("city") or "Unknown City"
     intersection = Intersection(
         id=f"{round(req.lat, 5)},{round(req.lng, 5)}",
         address=req.address or " & ".join(data.get("streets", [])) or f"{req.lat},{req.lng}",
         lat=req.lat,
         lng=req.lng,
-        city=req.city,
+        city=city,
         images=[ImageRef(**img) for img in data.get("images", [])],
     )
-    result = await coordinator.analyze(intersection, data)
+    vkey = keys.vision_key(req.lat, req.lng)
+    result = await coordinator.analyze(intersection, data, vision_key=vkey)
     payload = result.model_dump(mode="json")
-    await cache.set_json(keys.vision_key(req.lat, req.lng), payload, ttl=keys.VISION_TTL)
+    has_corroboration = any(f.get("corroboration") for f in payload.get("findings", []))
+    # Only cache when we have real corroborations — avoids locking in a result from
+    # a run where crash/311/news agents all returned empty.
+    if has_corroboration:
+        await cache.set_json(vkey, payload, ttl=keys.VISION_TTL)
     return payload
 
 

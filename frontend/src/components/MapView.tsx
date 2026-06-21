@@ -1,7 +1,7 @@
 import { useState } from "react";
 import MapboxMap from "./MapboxMap";
-import { forwardGeocode, reverseGeocode, MAPBOX_ENABLED, type GeoPlace } from "../lib/mapbox";
-import { ShieldPin, Search, ArrowRight, MapPin } from "./icons";
+import { reverseGeocode, MAPBOX_ENABLED, type GeoPlace } from "../lib/mapbox";
+import { ShieldPin, ArrowRight, MapPin } from "./icons";
 
 const DEMO: GeoPlace = {
   lat: 37.7706,

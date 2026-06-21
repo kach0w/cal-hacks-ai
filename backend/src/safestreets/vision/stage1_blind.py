@@ -12,7 +12,7 @@ from pathlib import Path
 
 import httpx
 
-from safestreets.clients.anthropic_client import get_anthropic
+from safestreets.clients.anthropic_client import get_anthropic, call_with_backoff
 from safestreets.config import get_settings
 from safestreets.models.condition import Confidence, NamedZone, ObservedCondition
 from safestreets.models.intersection import Intersection
@@ -20,16 +20,27 @@ from safestreets.models.intersection import Intersection
 _PROMPT = (Path(__file__).parent / "prompts" / "stage1_blind.txt").read_text()
 
 
-async def _encode_image(url: str) -> dict:
-    """Fetch an image URL and return an Anthropic image content block."""
+async def _encode_image(url: str, max_px: int = 512) -> dict:
+    """Fetch, resize to max_px on the long edge, and return an Anthropic image block."""
+    from io import BytesIO
+    from PIL import Image as PILImage
+
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(url)
         resp.raise_for_status()
-        media_type = resp.headers.get("content-type", "image/jpeg").split(";")[0]
-        data = base64.standard_b64encode(resp.content).decode()
+
+    img = PILImage.open(BytesIO(resp.content)).convert("RGB")
+    w, h = img.size
+    if max(w, h) > max_px:
+        scale = max_px / max(w, h)
+        img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
+
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=80)
+    data = base64.standard_b64encode(buf.getvalue()).decode()
     return {
         "type": "image",
-        "source": {"type": "base64", "media_type": media_type, "data": data},
+        "source": {"type": "base64", "media_type": "image/jpeg", "data": data},
     }
 
 
@@ -61,18 +72,21 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
     client = get_anthropic()
 
     # IMPORTANT: only imagery goes in. No community text.
-    # Fetch all images in parallel to cut latency.
-    encoded = await asyncio.gather(*[_encode_image(img.url) for img in intersection.images])
+    # Use satellite + N/S only (3 images) to keep input tokens manageable.
+    from safestreets.models.intersection import ViewDirection
+    _KEEP = {ViewDirection.NORTH, ViewDirection.SOUTH, ViewDirection.EAST, ViewDirection.WEST}
+    images = [img for img in intersection.images if img.direction in _KEEP]
+    encoded = await asyncio.gather(*[_encode_image(img.url) for img in images])
     content: list[dict] = [{"type": "text", "text": _PROMPT}]
-    for img, enc in zip(intersection.images, encoded):
+    for img, enc in zip(images, encoded):
         date_note = f" (captured {img.capture_date})" if img.capture_date else ""
         content.append({"type": "text", "text": f"[{img.direction.value}{date_note}]"})
         content.append(enc)
 
-    resp = await client.messages.create(
+    resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_vision_model,
         max_tokens=1024,
         messages=[{"role": "user", "content": content}],
-    )
+    ))
     text = "".join(b.text for b in resp.content if b.type == "text")
     return _parse(text)

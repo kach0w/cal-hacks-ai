@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from safestreets.clients.anthropic_client import get_anthropic
+from safestreets.clients.anthropic_client import get_anthropic, call_with_backoff
 from safestreets.config import get_settings
 from safestreets.models.condition import ObservedCondition
 from safestreets.models.finding import Corroboration, Finding, FindingStatus
@@ -69,7 +69,13 @@ async def corroborate(
         "council": community_data.get("council", []),
     }
 
-    resp = await client.messages.create(
+    # Trim community data to keep input tokens under control
+    payload["crash_data"] = payload["crash_data"][:25]
+    payload["complaints_311"] = payload["complaints_311"][:15]
+    payload["news"] = payload["news"][:10]
+    payload["council"] = payload["council"][:10]
+
+    resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_text_model,
         max_tokens=2500,
         messages=[
@@ -78,6 +84,6 @@ async def corroborate(
                 "content": f"{_PROMPT}\n\nDATA:\n{json.dumps(payload, default=str)}",
             }
         ],
-    )
+    ))
     text = "".join(b.text for b in resp.content if b.type == "text")
     return _parse(text, conditions)

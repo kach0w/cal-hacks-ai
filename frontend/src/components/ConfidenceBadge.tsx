@@ -1,5 +1,5 @@
 import type { FindingStatus } from "../types";
-import { Check, Eye, FileWarning } from "./icons";
+import { Check, Eye } from "./icons";
 
 const META: Record<
   FindingStatus,

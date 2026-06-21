@@ -30,7 +30,10 @@ def _edit_prompt(finding: Finding) -> str:
         f"Edit this image to show it AFTER this safety improvement has been applied: {fix}. "
         f"Keep the exact same camera angle, perspective, lighting, time of day, and all surroundings identical. "
         f"Only modify the specific infrastructure element that needs fixing: {finding.condition.observation}. "
-        f"Do not change anything else. Do not move the camera. Do not add text or labels."
+        f"Do not change anything else. Do not move the camera. Do not add text or labels. "
+        f"Prioritize retaining all groups or clumps of pedestrians visible (e.g., on the sidewalk) and ensure they are protected. "
+        f"Prioritize not removing any people, trees, or plants; instead, add robust safety guard rails, concrete cones, protections, and hazard avoidance, stop signs, pedestrian crossings, yield signs, roundabouts, traffic light changes, measures around their locations."
+        f"Only make the specific edits needed to fix the hazard described, add minimal."
     )
 
 
@@ -76,8 +79,22 @@ async def generate(
         if img.direction == direction
     }
 
-    tasks = [
-        _render_one(f, url_map.get(f.condition.source_view), f.condition.source_view)
-        for f in findings
-    ]
+    # One render per street-view direction — pick the most severe finding per view,
+    # fall back to the top finding overall for views with no assigned finding.
+    _DIRECTIONS = ["streetview_north", "streetview_south", "streetview_east", "streetview_west"]
+    by_view: dict[str, Finding] = {}
+    for f in findings:
+        view = f.condition.source_view
+        if view not in by_view:
+            by_view[view] = f
+
+    fallback = findings[0] if findings else None
+    selected: list[tuple[Finding, str]] = []
+    for view in _DIRECTIONS:
+        if view in url_map:  # only render views we actually have images for
+            finding = by_view.get(view) or fallback
+            if finding:
+                selected.append((finding, view))
+
+    tasks = [_render_one(f, url_map.get(view), view) for f, view in selected]
     return list(await asyncio.gather(*tasks))
