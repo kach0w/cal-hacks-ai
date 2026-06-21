@@ -1,124 +1,154 @@
 # SafeStreets
 
-A multi-agent system that reads an intersection — crash records, 311 complaints, local
-news, council minutes, and satellite + Street View imagery — identifies the specific
-physical conditions causing harm, and routes each finding to the action that gets it
-fixed: the ask, the matching grant program, the responsible official, and an
-accountability record of whether the city ever responded.
+**SafeStreets** is a multi-agent AI system that analyzes dangerous intersections and turns raw data into civic action. Pick any point on a map — SafeStreets reads crash records, 311 complaints, local news, Street View imagery, and council minutes, then produces a costed fix, a matching federal grant, a council letter, and a social media post ready to send.
 
-This repo is the implementation scaffold for the design described in
-`safestreets_v3_design_doc.md`. Configs and data contracts are written; the harder
-pieces are stubbed with clear interfaces so the team can parallelize.
-
-> Built for UC Berkeley AI Hackathon 3.0.
+Built for UC Berkeley AI Hackathon 3.0.
 
 ---
 
-## The core idea in one diagram
+## How it works
 
 ```
-address ──> orchestrator (Fetch.ai uAgent, adaptive dispatch)
-              ├─ structured data agent   (FARS, city open data)
-              ├─ news agent              (Browserbase scrape)
-              ├─ council/311 agent       (Browserbase scrape)
-              ├─ image fetcher           (Google satellite + Street View + dates)
-              └─ resident submissions    (current photos fill data deserts)
-                        │
-                     Redis  (cache + coalition reports + accountability log)
-                        │
-   Stage 1: BLIND VISION (Claude, imagery only) ── observed conditions + confidence
-                        │
-   Stage 2: CORROBORATION (independent match)   ── CONFIRMED / CANDIDATE / REPORTED
-                        │
-   intervention + funding agent (Claude) ── candidate fix + SS4A/HSIP match + messenger
-                        │
-   output: annotated REAL image + last-mile packet + one-pager
+map click ──▶ orchestrator (Fetch.ai adaptive dispatch)
+                 ├─ crash data agent      (CCRS / city open data via Socrata)
+                 ├─ 311 complaints agent  (Browserbase scrape)
+                 ├─ news agent            (Browserbase scrape)
+                 └─ image fetcher         (Google Street View + Satellite)
+                          │
+                       Redis  (24h cache per intersection)
+                          │
+    Stage 1 · BLIND VISION     Claude sees only images — no community text
+    (what the camera sees)     → observed conditions with confidence scores
+                          │
+    Stage 2 · CORROBORATION    Independent match against crash/311/news records
+    (two separate signals)     → CONFIRMED / CANDIDATE / REPORTED findings
+                          │
+    Stage 3 · INTERVENTION     Condition → costed fix → SS4A / HSIP grant match
+                          │
+    Stage 4 · LAST MILE        Single Claude call → tweet + council letter
+                          │
+    Stage 5 · CONCEPT RENDER   Gemini image edit: before → after (background)
 ```
 
-The two design decisions that make this defensible (and which the code structure
-protects):
+**Two design decisions that make this defensible:**
 
-1. **Blind-then-corroborate.** Stage 1 never sees the complaint text, so "seen" and
-   "reported by residents" are two independent signals. See `vision/stage1_blind.py`
-   and `vision/stage2_corroborate.py`.
-2. **Named-geometry placement, not raw pixels.** Claude assigns conditions to named
-   zones (NW corner, N leg, ...); the renderer maps zones to marker positions
-   deterministically. A marker can't land on the wrong corner. See `vision/geometry.py`.
+1. **Blind-then-corroborate** — Stage 1 never sees complaint text, so "camera spotted" and "residents reported" are genuinely independent signals. A finding marked CONFIRMED means two independent sources agree.
+
+2. **Named-zone geometry** — Claude assigns conditions to named zones (NW corner, N leg, …) rather than pixel coordinates. The renderer maps zones to marker positions deterministically. A marker can't land on the wrong corner.
 
 ---
 
-## Layout
+## Stack
 
-```
-backend/   FastAPI + Fetch.ai uAgents + Redis + Claude vision pipeline (Python)
-frontend/  Vite + React + TypeScript + Tailwind + Mapbox GL
-```
-
-See `backend/README.md` and `frontend/README.md` for module-by-module detail.
+| Layer | Tech |
+|---|---|
+| Backend | Python 3.11, FastAPI, Fetch.ai uAgents |
+| AI | Claude Haiku (vision + text), Gemini Flash (image editing) |
+| Data | CCRS crash records, Browserbase scraping, Google Maps API |
+| Cache | Redis (24h per intersection, scrape + analysis split) |
+| Frontend | Vite + React + TypeScript + Tailwind + Mapbox GL JS |
 
 ---
 
 ## Quick start
 
-Prereqs: Docker (for Redis), Python 3.11+, Node 18+.
+**Prerequisites:** Docker, Python 3.11+, Node 18+
 
 ```bash
-# 1. secrets
-cp .env.example .env            # fill in API keys
+# 1. Copy and fill in secrets
+cp .env.example .env
 
-# 2. Redis
-make redis-up                   # docker compose up -d redis
+# 2. Start Redis
+make redis-up
 
-# 3. backend
-make backend                    # installs deps, runs FastAPI on :8000
+# 3. Backend (terminal 1)
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=src uvicorn safestreets.main:app --reload --reload-dir src
 
-# 4. frontend (separate terminal)
-make frontend                   # installs deps, runs Vite on :5173
+# 4. Frontend (terminal 2)
+cd frontend
+npm install && npm run dev
+```
 
-# 5. (optional) preload the demo intersection so the demo is reliable
-make demo-seed
+Open http://localhost:5173 — click any intersection on the map.
+
+---
+
+## Environment variables
+
+Create a `.env` file at the repo root:
+
+```bash
+# Required
+ANTHROPIC_API_KEY=...
+GOOGLE_MAPS_API_KEY=...         # Street View + Static Maps (server-restricted)
+MAPBOX_TOKEN=...                # frontend map (set in frontend/.env as VITE_MAPBOX_TOKEN)
+
+# Recommended
+GOOGLE_AI_API_KEY=...           # Gemini before/after concept renders
+BROWSERBASE_API_KEY=...         # 311 + news scraping
+BROWSERBASE_PROJECT_ID=...
+
+# Optional
+SOCRATA_APP_TOKEN=...           # raises rate limits on city open data portals
+CLAUDE_VISION_MODEL=claude-haiku-4-5-20251001
+CLAUDE_TEXT_MODEL=claude-haiku-4-5-20251001
+DEMO_CITY=Berkeley              # default city for data scoping
+REDIS_URL=redis://localhost:6379/0
 ```
 
 ---
 
-## Keys you need
+## Project layout
 
-| Key | Used by | Where |
+```
+backend/
+  src/safestreets/
+    api/              HTTP routes (POST /analyze, SSE /analyze/stream, GET /intersection)
+    orchestrator/     Fetch.ai uAgent + adaptive dispatch + Redis caching
+    agents/           crash data, 311, news, image fetcher
+    vision/           Stage 1 blind pass + Stage 2 corroboration (the core)
+    intervention/     condition → fix → grant matching
+    lastmile/         tweet, council letter, Reddit post generation
+    render/           Gemini before/after concept image editing
+    models/           shared Pydantic contracts
+    store/            Redis client + key schema
+    clients/          thin wrappers: Anthropic, Google Maps, Browserbase, Socrata
+
+frontend/
+  src/
+    components/       MapboxMap, MarkerDetail, AgentFeed, LastMilePanel, ConceptRenders
+    hooks/            useAnalysis (SSE feed), useIntersection (polling)
+    api/              client.ts — typed fetch wrappers
+    types/            mirrors backend Pydantic models
+
+data/
+  alameda_intersections.geojson   5,024 Alameda County dangerous intersections (CCRS-sourced)
+```
+
+---
+
+## Caching behavior
+
+Two-layer cache in Redis:
+
+| Key | What | TTL |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | vision, intervention, last-mile | console.anthropic.com |
-| `BROWSERBASE_API_KEY` / `BROWSERBASE_PROJECT_ID` | news + council/311 agents | browserbase.com |
-| `GOOGLE_MAPS_API_KEY` | image fetcher (Static Maps + Street View) | Google Cloud console |
-| `SOCRATA_APP_TOKEN` | city open data (optional, raises rate limits) | data portal dev settings |
-| `MIDJOURNEY_API_KEY` | concept illustration (optional, secondary) | provider-dependent |
-| `MAPBOX_TOKEN` (frontend) | map selector | mapbox.com |
+| `ss:scrape:{lat}:{lng}` | Raw community data (crash/311/news/images) | 24h |
+| `ss:vision:{lat}:{lng}` | Full analysis result + concept renders | 24h |
+
+Both layers only write when they have real data — an analysis run where agents returned empty results is never cached, so the next request retries cleanly.
 
 ---
 
-## A known decision point: Stagehand
+## Makefile shortcuts
 
-The design names **Browserbase + Stagehand** for scraping. Stagehand is TypeScript-first.
-This scaffold keeps the backend in Python and uses the Browserbase Python SDK in the
-scraping agents. If you want Stagehand specifically, split the news/council agents into
-a small Node sidecar and have the Python orchestrator call it over HTTP. The agent
-interfaces in `agents/` are written so either choice drops in without touching the rest
-of the pipeline.
-
----
-
-## Build-plan mapping (from the design doc)
-
-| Day 1 | Files |
-|---|---|
-| FARS + one city portal + imagery with dates | `clients/nhtsa.py`, `clients/socrata.py`, `clients/google_maps.py`, `agents/` |
-| Stage 1 blind vision + correct placement | `vision/stage1_blind.py`, `vision/geometry.py` |
-| Stage 2 corroboration | `vision/stage2_corroborate.py` |
-| intervention + funding match | `intervention/` |
-| frontend annotated real image | `frontend/src/components/AnnotatedImage.tsx` |
-
-| Day 2 | Files |
-|---|---|
-| adaptive orchestration | `orchestrator/` |
-| live agent feed (SSE) | `api/routes.py`, `frontend/src/hooks/useAnalysis.ts`, `AgentFeed.tsx` |
-| last-mile packet + one-pager | `lastmile/`, `OnePagerExport.tsx` |
-| resident submissions | `agents/image_fetcher.py` (supersede), `ResidentSubmit.tsx` |
-| stretch: coalition, concept render | `lastmile/coalition.py`, `render/concept.py` |
+```bash
+make redis-up      # start Redis via Docker
+make redis-down    # stop Redis
+make backend       # install + run backend on :8000
+make frontend      # install + run frontend on :5173
+make test          # run backend tests
+```
