@@ -98,8 +98,8 @@ export default function MapView({
                 }}
               />
             </div>
-            <button type="submit" className="btn-primary">
-              SCAN <ArrowRight className="h-4 w-4" />
+            <button type="submit" className="btn-primary" style={{ padding: "16px 28px", fontSize: 10, letterSpacing: 2 }}>
+              SCAN &nbsp;<ArrowRight className="h-4 w-4" />
             </button>
           </form>
           {error && (
@@ -142,9 +142,10 @@ export default function MapView({
                       </div>
                       <button
                         className="btn-primary shrink-0"
+                        style={{ padding: "14px 24px", fontSize: 10, letterSpacing: 2 }}
                         onClick={() => onSelect({ lat: picked.lat, lng: picked.lng })}
                       >
-                        SCAN <ArrowRight className="h-4 w-4" />
+                        SCAN &nbsp;<ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
