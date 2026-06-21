@@ -3,31 +3,7 @@ import { useIntersection } from "../hooks/useIntersection";
 import { zoneToPercent } from "../lib/geometry";
 import MarkerDetail from "./MarkerDetail";
 import ConceptToggle from "./ConceptToggle";
-import type { FindingStatus } from "../types";
 import { MapPin, Camera, Eye } from "./icons";
-
-/**
- * The HERO deliverable: numbered markers placed by NAMED ZONE over the real satellite
- * image. Placement is deterministic (lib/geometry) so a marker can't land on the wrong
- * corner. Each marker expands to its observation, corroboration, fix, and funding.
- */
-
-const MARKER: Record<FindingStatus, string> = {
-  CONFIRMED: "bg-green-500 text-white ring-green-300",
-  CANDIDATE: "bg-amber-400 text-white ring-amber-200",
-  REPORTED: "bg-amber-400 text-white ring-amber-200",
-};
-const RING: Record<FindingStatus, string> = {
-  CONFIRMED: "bg-green-400/40",
-  CANDIDATE: "bg-amber-400/40",
-  REPORTED: "bg-amber-400/40",
-};
-
-const LABEL: Record<FindingStatus, string> = {
-  CONFIRMED: "Confirmed",
-  CANDIDATE: "Problem",
-  REPORTED: "Problem",
-};
 
 const CORNERS = [
   { label: "NW", pos: "left-3 top-3" },
@@ -104,19 +80,22 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
             return (
               <button
                 key={i}
-                aria-label={`Finding ${i + 1}: ${f.status} at ${f.condition.zone}`}
+                aria-label={`Finding ${i + 1} at ${f.condition.zone}`}
                 className="group absolute z-10 cursor-pointer"
                 style={{ left: pos.left, top: pos.top, transform: "translate(-50%,-50%)" }}
                 onClick={() => setOpen(active ? null : i)}
               >
                 <span
-                  className={`absolute left-1/2 top-1/2 h-9 w-9 rounded-full ${RING[f.status]} animate-ping-ring`}
-                />
-                <span
-                  className={`relative grid h-8 w-8 place-items-center rounded-full font-mono text-sm font-bold shadow-marker ring-2 transition-transform duration-200 group-hover:scale-110 ${
-                    MARKER[f.status]
-                  } ${active ? "scale-110 ring-4" : ""}`}
-                  style={{ animation: `marker-in 0.5s ${i * 120}ms both` }}
+                  className="relative grid h-8 w-8 place-items-center font-mono text-sm font-bold group-hover:scale-110 transition-transform duration-150"
+                  style={{
+                    background: "#e84040",
+                    border: active ? "3px solid #fff" : "3px solid #8b0000",
+                    boxShadow: active ? "0 0 0 2px #e84040" : "3px 3px 0 #8b0000",
+                    color: "#fff",
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: 10,
+                    animation: `marker-in 0.5s ${i * 120}ms both`,
+                  }}
                 >
                   {i + 1}
                 </span>
@@ -133,11 +112,6 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
           )}
         </div>
 
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          <Legend color="bg-green-500" label="CORROBORATED" />
-          <Legend color="bg-yellow-400" label="NOT CORROBORATED" />
-        </div>
       </div>
 
       {/* Selected finding detail */}
@@ -154,14 +128,5 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
         </div>
       )}
     </section>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-2" style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#3a3f60" }}>
-      <span className={`h-3 w-3 ${color}`} style={{ display: "inline-block" }} />
-      {label}
-    </span>
   );
 }
