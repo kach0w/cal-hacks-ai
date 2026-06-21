@@ -30,7 +30,10 @@ def _edit_prompt(finding: Finding) -> str:
         f"Edit this image to show it AFTER this safety improvement has been applied: {fix}. "
         f"Keep the exact same camera angle, perspective, lighting, time of day, and all surroundings identical. "
         f"Only modify the specific infrastructure element that needs fixing: {finding.condition.observation}. "
-        f"Do not change anything else. Do not move the camera. Do not add text or labels."
+        f"Do not change anything else. Do not move the camera. Do not add text or labels. "
+        f"Prioritize retaining all groups or clumps of pedestrians visible (e.g., on the sidewalk) and ensure they are protected. "
+        f"Prioritize not removing any people, trees, or plants; instead, add robust safety guard rails, concrete cones, protections, and hazard avoidance, stop signs, pedestrian crossings, yield signs, roundabouts, traffic light changes, measures around their locations."
+        f"Only make the specific edits needed to fix the hazard described, add minimal."
     )
 
 
@@ -76,8 +79,17 @@ async def generate(
         if img.direction == direction
     }
 
+    # Deduplicate: one render per unique source_view — avoid repeating the same image
+    seen_views: set[str] = set()
+    unique_findings: list[Finding] = []
+    for f in findings:
+        view = f.condition.source_view
+        if view not in seen_views:
+            seen_views.add(view)
+            unique_findings.append(f)
+
     tasks = [
         _render_one(f, url_map.get(f.condition.source_view), f.condition.source_view)
-        for f in findings
+        for f in unique_findings
     ]
     return list(await asyncio.gather(*tasks))

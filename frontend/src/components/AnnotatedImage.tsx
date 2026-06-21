@@ -46,22 +46,25 @@ export default function AnnotatedImage({ lat, lng }: { lat: number; lng: number 
       <div className="p-5">
         <div className="relative mx-auto aspect-square w-full max-w-[560px] overflow-hidden rounded-xl border border-gray-200 bg-white">
           {/* Real image, or a canonical-frame placeholder */}
-          {result?.annotated_image_url ? (
-            <img
-              src={result.annotated_image_url}
-              alt={`Annotated satellite view of ${result.intersection.address}`}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-grid-faint [background-size:32px_32px]">
-              {/* Canonical intersection frame: the two legs */}
-              <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-gray-50" />
-              <div className="absolute top-1/2 left-0 h-16 w-full -translate-y-1/2 bg-gray-50" />
-              {loading && (
-                <div className="absolute inset-x-0 top-0 h-24 animate-scan bg-gradient-to-b from-brand/20 to-transparent" />
-              )}
-            </div>
-          )}
+          {(() => {
+            const satUrl = result?.intersection?.images?.find((img: { direction: string; url: string }) => img.direction === "SATELLITE")?.url
+              ?? result?.annotated_image_url;
+            return satUrl ? (
+              <img
+                src={satUrl}
+                alt={`Satellite view of ${result?.intersection.address}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-grid-faint [background-size:32px_32px]">
+                <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-gray-50" />
+                <div className="absolute top-1/2 left-0 h-16 w-full -translate-y-1/2 bg-gray-50" />
+                {loading && (
+                  <div className="absolute inset-x-0 top-0 h-24 animate-scan bg-gradient-to-b from-brand/20 to-transparent" />
+                )}
+              </div>
+            );
+          })()}
 
           {/* Faint corner zone labels (the canonical frame) */}
           {CORNERS.map((c) => (
