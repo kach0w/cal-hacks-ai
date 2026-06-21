@@ -14,7 +14,9 @@ _SV = "https://maps.googleapis.com/maps/api/streetview"
 _SV_META = "https://maps.googleapis.com/maps/api/streetview/metadata"
 _GEOCODE = "https://maps.googleapis.com/maps/api/geocode/json"
 
-_HEADINGS = {"north": 0, "east": 90, "south": 180, "west": 270}
+# Approach headings: camera is ON the named leg, looking TOWARD the intersection center.
+# e.g. "north" = camera north of center, facing south (180°).
+_HEADINGS = {"north": 180, "east": 270, "south": 0, "west": 90}
 
 # words to drop so 'University Avenue' -> 'university' (the part that appears in slugs/PDFs)
 _STREET_SUFFIXES = {
@@ -92,7 +94,11 @@ def satellite_url(lat: float, lng: float, zoom: int = 19, size: int = 640) -> st
 def streetview_url(lat: float, lng: float, direction: str, size: int = 640) -> str:
     key = get_settings().google_maps_api_key
     heading = _HEADINGS[direction]
-    return f"{_SV}?location={lat},{lng}&size={size}x{size}&heading={heading}&fov=90&key={key}"
+    return (
+        f"{_SV}?location={lat},{lng}&size={size}x{size}"
+        f"&heading={heading}&fov=90&pitch=0"
+        f"&radius=50&source=outdoor&key={key}"
+    )
 
 
 async def streetview_capture_date(lat: float, lng: float) -> str | None:
@@ -101,4 +107,7 @@ async def streetview_capture_date(lat: float, lng: float) -> str | None:
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(_SV_META, params={"location": f"{lat},{lng}", "key": key})
         data = resp.json()
-    return data.get("date") if data.get("status") == "OK" else None
+    raw = data.get("date") if data.get("status") == "OK" else None
+    if raw and len(raw) == 7:
+        raw = f"{raw}-01"
+    return raw

@@ -53,6 +53,15 @@ export interface AccountabilityEvent {
   action_status: "no_action_recorded" | "action_recorded" | "unknown";
 }
 
+export interface ConceptRender {
+  zone: string;
+  observation: string;
+  fix: string | null;
+  before_url: string | null;
+  after_url: string | null;
+  label: string;
+}
+
 export interface AnalysisResult {
   intersection: { id: string; address: string; lat: number; lng: number; images: any[] };
   findings: Finding[];
@@ -60,6 +69,9 @@ export interface AnalysisResult {
   coalition_count: number;
   annotated_image_url: string | null;
   concept_image_url: string | null;
+  renders: ConceptRender[];
+  social_post: string | null;
+  council_report: string | null;
 }
 
 export interface ProgressEvent {

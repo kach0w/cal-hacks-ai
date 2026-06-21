@@ -8,6 +8,16 @@ export async function getIntersection(lat: number, lng: number): Promise<Analysi
   return res.json();
 }
 
+export async function analyzeIntersection(lat: number, lng: number): Promise<AnalysisResult | null> {
+  const res = await fetch(`${BASE}/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat, lng }),
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function submitReport(body: {
   lat: number; lng: number; description: string; zone_hint?: string; photo_url?: string;
 }): Promise<{ coalition_count: number }> {

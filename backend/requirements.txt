@@ -9,12 +9,13 @@ pydantic-settings>=2.3
 redis>=5.0
 httpx>=0.27
 python-dotenv>=1.0
+requests>=2.32
 
 # ai / agents
 anthropic>=0.34
 uagents>=0.13
-browserbase>=1.0          # cloud headless browser for the scraping agents
-playwright>=1.44          # drives the Browserbase session (news + council/311)
+browserbase>=1.0
+playwright>=1.60
 
 # imagery
 pillow>=10.3

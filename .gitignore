@@ -24,3 +24,5 @@ backend/.cache/
 
 # IDE
 .idea/
+.vscode
+.claude

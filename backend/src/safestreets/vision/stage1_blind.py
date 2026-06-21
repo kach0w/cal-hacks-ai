@@ -5,6 +5,7 @@ Claude sees ONLY imagery — no crash data, no complaints, no news. This is what
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from pathlib import Path
@@ -60,15 +61,17 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
     client = get_anthropic()
 
     # IMPORTANT: only imagery goes in. No community text.
+    # Fetch all images in parallel to cut latency.
+    encoded = await asyncio.gather(*[_encode_image(img.url) for img in intersection.images])
     content: list[dict] = [{"type": "text", "text": _PROMPT}]
-    for img in intersection.images:
+    for img, enc in zip(intersection.images, encoded):
         date_note = f" (captured {img.capture_date})" if img.capture_date else ""
         content.append({"type": "text", "text": f"[{img.direction.value}{date_note}]"})
-        content.append(await _encode_image(img.url))
+        content.append(enc)
 
     resp = await client.messages.create(
         model=settings.claude_vision_model,
-        max_tokens=2000,
+        max_tokens=1024,
         messages=[{"role": "user", "content": content}],
     )
     text = "".join(b.text for b in resp.content if b.type == "text")

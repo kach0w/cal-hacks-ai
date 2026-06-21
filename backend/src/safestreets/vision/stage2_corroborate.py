@@ -19,7 +19,13 @@ _PROMPT = (Path(__file__).parent / "prompts" / "stage2_corroborate.txt").read_te
 
 
 def _parse(text: str, conditions: list[ObservedCondition]) -> list[Finding]:
-    text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    text = text.strip()
+    # Extract the first [...] block in case the model returns prose around the JSON
+    start = text.find("[")
+    end = text.rfind("]")
+    if start == -1 or end == -1:
+        return []
+    text = text[start:end + 1]
     rows = json.loads(text)
     findings: list[Finding] = []
     for row in rows:
