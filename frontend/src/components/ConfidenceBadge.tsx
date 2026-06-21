@@ -1,16 +1,52 @@
 import type { FindingStatus } from "../types";
+import { Check, Eye, FileWarning } from "./icons";
 
-const STYLES: Record<FindingStatus, string> = {
-  CONFIRMED: "bg-green-100 text-green-800",
-  CANDIDATE: "bg-amber-100 text-amber-800",
-  REPORTED: "bg-slate-100 text-slate-700",
+const META: Record<
+  FindingStatus,
+  { ring: string; text: string; dot: string; Icon: typeof Check; label: string }
+> = {
+  CONFIRMED: {
+    ring: "border-confirmed/30 bg-confirmed/10",
+    text: "text-confirmed",
+    dot: "bg-confirmed",
+    Icon: Check,
+    label: "CONFIRMED",
+  },
+  CANDIDATE: {
+    ring: "border-candidate/30 bg-candidate/10",
+    text: "text-candidate",
+    dot: "bg-candidate",
+    Icon: Eye,
+    label: "CANDIDATE",
+  },
+  REPORTED: {
+    ring: "border-reported/30 bg-reported/10",
+    text: "text-reported",
+    dot: "bg-reported",
+    Icon: FileWarning,
+    label: "REPORTED",
+  },
 };
 
 /** CONFIRMED = seen AND independently corroborated. The tool never launders a guess. */
-export default function ConfidenceBadge({ status }: { status: FindingStatus }) {
+export default function ConfidenceBadge({
+  status,
+  size = "md",
+}: {
+  status: FindingStatus;
+  size?: "sm" | "md";
+}) {
+  const m = META[status];
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${STYLES[status]}`}>
-      {status}
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border font-mono font-semibold tracking-wide ${m.ring} ${m.text} ${
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"
+      }`}
+    >
+      <m.Icon className="h-3 w-3" />
+      {m.label}
     </span>
   );
 }
+
+export { META as STATUS_META };
