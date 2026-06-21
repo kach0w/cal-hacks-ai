@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useIntersection } from "../hooks/useIntersection";
 import { composeCouncilEmail } from "../api/client";
 import type { CouncilEmailDraft } from "../types";
-import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail, Paperclip } from "./icons";
+import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail, Paperclip, Download } from "./icons";
 
 export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }) {
   const { result, loading } = useIntersection(lat, lng);
@@ -144,14 +144,42 @@ ${html}
 /**
  * Email-the-council action that sits under the printable report. An LLM email agent on the
  * backend writes a human, professional message (concerns + statistics + call to action) and
- * a subject line, resolves the council member(s) by jurisdiction (Socrata), and returns a
- * ready-to-send .eml with the report PDF already attached. We download that .eml so it opens
- * in the user's own mail client for a final review + send.
+ * a subject line, resolves the council member(s) by jurisdiction (Socrata), and returns the
+ * draft plus the report PDF. The user can send it through whichever platform they use:
+ * desktop mail (a .eml that opens with the PDF already attached) or web Gmail/Outlook/default
+ * (a prefilled compose window — web compose can't carry an attachment, so we download the PDF
+ * for them to attach in one click).
  */
+function downloadBase64(b64: string, name: string, mime: string) {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+type WebPlatform = "gmail" | "outlook" | "mailto";
+
+function composeUrl(platform: WebPlatform, to: string, subject: string, body: string): string {
+  const s = encodeURIComponent(subject);
+  const b = encodeURIComponent(body);
+  switch (platform) {
+    case "gmail":
+      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${s}&body=${b}`;
+    case "outlook":
+      return `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${s}&body=${b}`;
+    case "mailto":
+      return `mailto:${to}?subject=${s}&body=${b}`;
+  }
+}
+
 function EmailCouncil({ lat, lng }: { lat: number; lng: number }) {
   const [draft, setDraft] = useState<CouncilEmailDraft | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [attachHint, setAttachHint] = useState(false);
 
   async function compose() {
     setLoading(true);
@@ -162,15 +190,19 @@ function EmailCouncil({ lat, lng }: { lat: number; lng: number }) {
     setLoading(false);
   }
 
-  function download() {
+  /** Web compose (Gmail/Outlook/default): prefill the message and hand over the PDF to attach. */
+  function sendVia(platform: WebPlatform) {
     if (!draft) return;
-    const bytes = Uint8Array.from(atob(draft.eml_base64), (c) => c.charCodeAt(0));
-    const url = URL.createObjectURL(new Blob([bytes], { type: "message/rfc822" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = draft.filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    const to = draft.recipients.map((r) => r.email).join(",");
+    downloadBase64(draft.pdf_base64, draft.pdf_filename, "application/pdf");
+    window.open(composeUrl(platform, to, draft.subject, draft.body), "_blank");
+    setAttachHint(true);
+  }
+
+  /** Desktop mail: a .eml that opens in Outlook/Apple Mail with the PDF already attached. */
+  function downloadEml() {
+    if (!draft) return;
+    downloadBase64(draft.eml_base64, draft.filename, "message/rfc822");
   }
 
   return (
@@ -224,15 +256,36 @@ function EmailCouncil({ lat, lng }: { lat: number; lng: number }) {
             {draft.body}
           </div>
 
-          <div style={{ padding: "8px 10px", borderTop: "2px solid #2c3060", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>
+          <div style={{ padding: "8px 10px", borderTop: "2px solid #2c3060" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>
               <Paperclip className="h-3 w-3" />
-              {draft.filename.replace(/\.eml$/, ".pdf")}
-            </span>
-            <button onClick={download} className="btn-primary" style={{ marginLeft: "auto", fontSize: 8, padding: "8px 12px" }}>
-              <Mail className="h-3 w-3" />
-              Open in mail app
-            </button>
+              {draft.pdf_filename}
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <button onClick={() => sendVia("gmail")} className="btn-primary" style={{ fontSize: 8, padding: "8px 10px" }}>
+                <Mail className="h-3 w-3" />
+                Gmail
+              </button>
+              <button onClick={() => sendVia("outlook")} className="btn-primary" style={{ fontSize: 8, padding: "8px 10px" }}>
+                <Mail className="h-3 w-3" />
+                Outlook
+              </button>
+              <button onClick={() => sendVia("mailto")} className="btn-ghost" style={{ fontSize: 8, padding: "8px 10px" }}>
+                <Mail className="h-3 w-3" />
+                Default app
+              </button>
+              <button onClick={downloadEml} className="btn-ghost" style={{ fontSize: 8, padding: "8px 10px" }}>
+                <Download className="h-3 w-3" />
+                .eml (Outlook/Apple — PDF attached)
+              </button>
+            </div>
+
+            <p style={{ fontFamily: '"VT323", monospace', fontSize: 15, lineHeight: 1.3, color: attachHint ? "#1a1f3d" : "#6070a0", margin: "8px 0 0" }}>
+              {attachHint
+                ? `↳ Your draft opened in a new tab and ${draft.pdf_filename} downloaded — attach it before sending.`
+                : "Gmail / Outlook / Default open a prefilled draft (the PDF downloads to attach). The .eml opens in a desktop mail app with the PDF already attached."}
+            </p>
           </div>
         </div>
       )}

@@ -198,6 +198,10 @@ def test_council_email_builds_eml_with_pdf_attachment(monkeypatch):
     assert body["recipients"][0]["email"] == "d4@city.gov"
     assert body["filename"].endswith(".eml")
 
+    # Standalone PDF is returned too, for web Gmail/Outlook compose (manual attach).
+    assert body["pdf_filename"].endswith(".pdf")
+    assert base64.b64decode(body["pdf_base64"]).startswith(b"%PDF")
+
     eml = base64.b64decode(body["eml_base64"]).decode("utf-8")
     msg = email_lib.message_from_string(eml)
     assert msg["To"] == "d4@city.gov"
