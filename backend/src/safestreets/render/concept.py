@@ -81,7 +81,7 @@ async def generate(
 
     # One render per street-view direction — pick the most severe finding per view,
     # fall back to the top finding overall for views with no assigned finding.
-    _DIRECTIONS = ["streetview_north", "streetview_south", "streetview_east", "streetview_west"]
+    _DIRECTIONS = ["streetview_north", "streetview_south"]
     by_view: dict[str, Finding] = {}
     for f in findings:
         view = f.condition.source_view

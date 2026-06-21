@@ -1,13 +1,10 @@
-"""Gemini 2.5 Flash image generation client.
-
-Uses gemini-2.5-flash-preview-05-20 via generateContent with IMAGE modality.
-Falls back gracefully if the key is missing or generation fails.
-"""
+"""Gemini image editing client — cost-optimized."""
 from __future__ import annotations
 
 import asyncio
 import logging
 from functools import partial
+from io import BytesIO
 
 import httpx
 from google import genai
@@ -26,6 +23,20 @@ _VIEW_TO_MIME = {
     "streetview_east": "image/jpeg",
     "streetview_west": "image/jpeg",
 }
+
+_MAX_PX = 512  # resize source image before sending to reduce input tokens
+
+
+def _resize(data: bytes, max_px: int = _MAX_PX) -> bytes:
+    from PIL import Image as PILImage
+    img = PILImage.open(BytesIO(data)).convert("RGB")
+    w, h = img.size
+    if max(w, h) > max_px:
+        scale = max_px / max(w, h)
+        img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=80)
+    return buf.getvalue()
 
 
 async def fetch_image_bytes(url: str) -> bytes:
@@ -49,8 +60,9 @@ async def generate_image(
 
     try:
         if source_image_bytes:
+            resized = _resize(source_image_bytes)
             contents = [
-                types.Part.from_bytes(data=source_image_bytes, mime_type=source_mime),
+                types.Part.from_bytes(data=resized, mime_type="image/jpeg"),
                 types.Part.from_text(text=prompt),
             ]
         else:
@@ -62,7 +74,7 @@ async def generate_image(
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE", "TEXT"],
-                thinking_config=types.ThinkingConfig(thinking_budget=8192),
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
         result = await asyncio.get_event_loop().run_in_executor(None, fn)
