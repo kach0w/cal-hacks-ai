@@ -79,17 +79,22 @@ async def generate(
         if img.direction == direction
     }
 
-    # Deduplicate: one render per unique source_view — avoid repeating the same image
-    seen_views: set[str] = set()
-    unique_findings: list[Finding] = []
+    # One render per street-view direction — pick the most severe finding per view,
+    # fall back to the top finding overall for views with no assigned finding.
+    _DIRECTIONS = ["streetview_north", "streetview_south", "streetview_east", "streetview_west"]
+    by_view: dict[str, Finding] = {}
     for f in findings:
         view = f.condition.source_view
-        if view not in seen_views:
-            seen_views.add(view)
-            unique_findings.append(f)
+        if view not in by_view:
+            by_view[view] = f
 
-    tasks = [
-        _render_one(f, url_map.get(f.condition.source_view), f.condition.source_view)
-        for f in unique_findings
-    ]
+    fallback = findings[0] if findings else None
+    selected: list[tuple[Finding, str]] = []
+    for view in _DIRECTIONS:
+        if view in url_map:  # only render views we actually have images for
+            finding = by_view.get(view) or fallback
+            if finding:
+                selected.append((finding, view))
+
+    tasks = [_render_one(f, url_map.get(view), view) for f, view in selected]
     return list(await asyncio.gather(*tasks))

@@ -68,7 +68,7 @@ Rules: lead with human cost; name the specific fix and cost; end with a call to 
 A formal letter to the city council transportation committee. Plain text only — no markdown, no asterisks, no pound signs.
 Structure:
 - Date: {today}
-- To: City Council Transportation Committee, City of {intersection.city or "Berkeley"}
+- To: City Council Transportation Committee, City of {intersection.city or "the City"}
 - From: SafeStreets Community Safety Initiative
 - Re: Pedestrian Safety Hazards at {intersection.address}
 - Opening paragraph stating purpose and urgency

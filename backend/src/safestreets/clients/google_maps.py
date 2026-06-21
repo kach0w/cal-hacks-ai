@@ -27,25 +27,33 @@ _STREET_SUFFIXES = {
 
 
 async def nearby_streets(lat: float, lng: float) -> list[str]:
-    """Reverse-geocode to the street names at this point (for news/council matching).
+    """Reverse-geocode to the street names at this point (for news/council matching)."""
+    result = await reverse_geocode(lat, lng)
+    return result["streets"]
 
-    Returns the distinct 'route' names Google reports nearby, e.g.
-    ['University Avenue', 'Martin Luther King Jr Way'].
-    """
+
+async def reverse_geocode(lat: float, lng: float) -> dict:
+    """Returns {streets: [...], city: str, state: str} from reverse geocode."""
     key = get_settings().google_maps_api_key
     if not key:
-        return []
+        return {"streets": [], "city": "", "state": ""}
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(_GEOCODE, params={"latlng": f"{lat},{lng}", "key": key})
         data = resp.json()
     routes: list[str] = []
+    city = ""
+    state = ""
     for result in data.get("results", []):
         for comp in result.get("address_components", []):
-            if "route" in comp.get("types", []):
-                name = comp.get("long_name")
-                if name and name not in routes:
-                    routes.append(name)
-    return routes
+            types = comp.get("types", [])
+            name = comp.get("long_name", "")
+            if "route" in types and name and name not in routes:
+                routes.append(name)
+            if "locality" in types and not city:
+                city = name
+            if "administrative_area_level_1" in types and not state:
+                state = comp.get("short_name", name)
+    return {"streets": routes, "city": city, "state": state}
 
 
 async def geocode_address(address: str) -> dict | None:

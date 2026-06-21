@@ -71,12 +71,13 @@ async def analyze(req: AnalyzeRequest):
         return cached
 
     data = await gather_data(req.lat, req.lng, req.city)
+    city = req.city or data.get("city") or "Unknown City"
     intersection = Intersection(
         id=f"{round(req.lat, 5)},{round(req.lng, 5)}",
         address=req.address or " & ".join(data.get("streets", [])) or f"{req.lat},{req.lng}",
         lat=req.lat,
         lng=req.lng,
-        city=req.city,
+        city=city,
         images=[ImageRef(**img) for img in data.get("images", [])],
     )
     vkey = keys.vision_key(req.lat, req.lng)

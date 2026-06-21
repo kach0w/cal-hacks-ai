@@ -37,14 +37,18 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
         image_fetcher,
         structured_data,
     )
+    from safestreets.clients.google_maps import reverse_geocode as google_maps_reverse_geocode
     from safestreets.clients import google_maps
     from safestreets.config import get_settings
 
     city = city or get_settings().demo_city  # demo scope lives in one config knob
     yield {"agent": "orchestrator", "msg": "locating intersection"}
     streets: list[str] = []
+    geo_city = ""
     try:
-        streets = await google_maps.nearby_streets(lat, lng)
+        geo = await google_maps_reverse_geocode(lat, lng)
+        streets = geo["streets"]
+        geo_city = geo["city"]
     except Exception:  # noqa: BLE001
         streets = []
     yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
@@ -64,6 +68,7 @@ async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[Pro
     data = {
         "images": [img.model_dump(mode="json") for img in images],
         "streets": streets,
+        "city": geo_city or city or "",
         "crash_data": crash,
         "complaints_311": complaints,
     }
