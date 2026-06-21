@@ -1,14 +1,17 @@
 """Adaptive dispatch.
 
 This is the Fetch.ai-track substance: not a static fan-out, but concurrent execution
-with retry/backoff and signal-driven escalation (e.g. if the first scrape returns strong
-signals, escalate to a deeper pass). Emits progress events for the live agent feed.
+with retry/backoff and signal-driven escalation. It also caches the gathered data in
+Redis under `scrape_key` (24h) so repeat queries are instant and we don't re-scrape /
+re-hit Browserbase for the same intersection. Emits progress events for the live feed.
 """
 from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
+
+from safestreets.store import cache, keys
 
 ProgressEvent = dict[str, Any]
 
@@ -26,133 +29,75 @@ async def _with_retry(fn: Callable[[], Awaitable[Any]], attempts: int = 2, base_
     raise last if last else RuntimeError("dispatch failed")
 
 
-def _agent_calls(lat: float, lng: float, city: str | None) -> dict[str, Callable[[], Awaitable[Any]]]:
-    """The agents to run, keyed by name. Single source of truth so the SSE feed
-    (`run_pipeline`) and the uAgent path (`gather_community_data`) can't drift."""
+async def _gather(lat: float, lng: float, city: str | None) -> AsyncIterator[ProgressEvent]:
+    """Run every agent, emitting progress; the final event carries the assembled
+    community_data under '__data__' and the data is cached under scrape_key."""
     from safestreets.agents import (
         council_311_agent,
         image_fetcher,
-        news_agent,
         structured_data,
     )
+    from safestreets.clients import google_maps
+    from safestreets.config import get_settings
 
-    return {
-        "structured": lambda: structured_data.fetch_crash_data(lat, lng, city),
-        "news": lambda: news_agent.fetch_news(lat, lng, city),
-        "council_311": lambda: council_311_agent.fetch_council_and_311(lat, lng, city),
-        "images": lambda: image_fetcher.fetch_images(lat, lng),
+    city = city or get_settings().demo_city  # demo scope lives in one config knob
+    yield {"agent": "orchestrator", "msg": "locating intersection"}
+    streets: list[str] = []
+    try:
+        streets = await google_maps.nearby_streets(lat, lng)
+    except Exception:  # noqa: BLE001
+        streets = []
+    yield {"agent": "orchestrator", "msg": "streets", "streets": streets}
+
+    # Per-intersection data is the GEO-filtered hard evidence only: imagery, crashes,
+    # 311. City-wide news + council street-safety coverage lives in the civic key
+    # (ss:civic:<city>:street-safety), scraped once for the whole city — not per corner.
+    yield {"agent": "images", "msg": "satellite + street view"}
+    images = await _with_retry(lambda: image_fetcher.fetch_images(lat, lng)) or []
+    yield {"agent": "images", "msg": "done", "count": len(images)}
+
+    yield {"agent": "structured", "msg": "crash records"}
+    crash = await _with_retry(lambda: structured_data.fetch_crash_data(lat, lng, city)) or []
+    yield {"agent": "structured", "msg": "done", "count": len(crash)}
+
+    yield {"agent": "complaints_311", "msg": "311 complaints"}
+    complaints = await _with_retry(lambda: council_311_agent.fetch_311(lat, lng)) or []
+    yield {"agent": "complaints_311", "msg": "done", "count": len(complaints)}
+
+    data = {
+        "images": [img.model_dump(mode="json") for img in images],
+        "streets": streets,
+        "crash_data": crash,
+        "complaints_311": complaints,
     }
-
-
-async def gather_community_data(lat: float, lng: float, city: str | None) -> dict[str, Any]:
-    """Run the agents and return their raw results keyed by agent name.
-
-    This is the substance behind `run_pipeline` without the progress-event wrapping:
-    non-SSE callers (the Fetch.ai uAgent orchestrator) use it to feed
-    `coordinator.analyze`. Keys: structured, news, council_311, images.
-    """
-    results: dict[str, Any] = {}
-    for name, call in _agent_calls(lat, lng, city).items():
-        results[name] = await _with_retry(call)
-    return results
-
-
-# Friendly labels so the live feed reads like reporting, not like function names.
-_LABELS = {
-    "structured": "crash records (FARS + city open data)",
-    "news": "local news",
-    "council_311": "council minutes + 311 portal",
-    "images": "satellite + street view imagery",
-}
-
-
-def _summarize(name: str, value: Any) -> str:
-    """Honest one-liner for the feed — counts what actually came back, invents nothing."""
-    label = _LABELS.get(name, name)
-    if value is None:
-        return f"{label}: no data"
-    if isinstance(value, dict):  # council_311 -> {complaints_311, council}
-        return (
-            f"{label}: {len(value.get('complaints_311', []))} 311 reports, "
-            f"{len(value.get('council', []))} council mentions"
-        )
-    if isinstance(value, list):
-        unit = {"images": "views", "structured": "crash records", "news": "articles"}.get(name, "items")
-        return f"{label}: {len(value)} {unit}"
-    return f"{label}: ok"
-
-
-def _event(name: str, value: Any, err: str | None) -> ProgressEvent:
-    """Build the per-agent feed event (the {agent, msg, ...} shape AgentFeed.tsx renders)."""
-    if err:
-        return {"agent": name, "msg": f"{_LABELS.get(name, name)}: failed ({err})", "error": True}
-    return {"agent": name, "msg": _summarize(name, value)}
-
-
-def _escalation_reason(results: dict[str, Any]) -> str | None:
-    """Signal-driven escalation gate: do the first-wave danger signals (crash records,
-    news) warrant paying for the deep council-minutes + 311 scrape? Returns a human reason
-    when they do, else None. Stubbed agents return nothing, so this stays quiet until the
-    real crash/news feeds are live."""
-    crashes = results.get("structured") or []
-    news = results.get("news") or []
-    triggers: list[str] = []
-    if crashes:
-        triggers.append(f"{len(crashes)} crash records")
-    if news:
-        triggers.append(f"{len(news)} news reports")
-    return ", ".join(triggers) or None
-
-
-async def _dispatch_concurrently(
-    calls: dict[str, Callable[[], Awaitable[Any]]], names: list[str]
-) -> AsyncIterator[tuple[str, Any, str | None]]:
-    """Run the named agents concurrently (each with retry/backoff) and yield
-    `(name, value, error)` as each one lands — completion order, so the feed updates live.
-    A single agent failing surfaces as an error tuple; it never kills the stream."""
-
-    async def _run(name: str) -> tuple[str, Any, str | None]:
-        try:
-            return name, await _with_retry(calls[name]), None
-        except Exception as exc:  # noqa: BLE001 — surface to the feed, don't crash the pipeline
-            return name, None, str(exc)
-
-    for completed in asyncio.as_completed([asyncio.create_task(_run(n)) for n in names]):
-        yield await completed
+    await cache.set_json(keys.scrape_key(lat, lng), data, ttl=keys.SCRAPE_TTL)
+    yield {"__data__": data}
 
 
 async def run_pipeline(lat: float, lng: float, city: str | None) -> AsyncIterator[ProgressEvent]:
     """Yields progress events the SSE endpoint streams to the frontend agent feed.
 
-    Adaptive, not a static fan-out: a fast first wave (crash data, news, imagery) fans out
-    concurrently, then strong danger signals escalate to the expensive deep council/311
-    scrape. The event shape ({agent, msg, ...}) is what AgentFeed.tsx renders.
+    On a cache hit we short-circuit (the 'instant on repeat' moment); otherwise we run
+    the agents live, emitting per-agent events, and persist the result for /analyze.
     """
-    calls = _agent_calls(lat, lng, city)
-    results: dict[str, Any] = {}
+    if await cache.get_json(keys.scrape_key(lat, lng)) is not None:
+        yield {"agent": "orchestrator", "msg": "cache hit — instant", "cached": True}
+        return
 
-    # Wave 1: the primary danger signals + imagery, fanned out concurrently.
-    yield {"agent": "orchestrator", "msg": "dispatching first-wave agents (concurrent)"}
-    async for name, value, err in _dispatch_concurrently(calls, ["structured", "news", "images"]):
-        results[name] = value
-        yield _event(name, value, err)
+    yield {"agent": "orchestrator", "msg": "dispatching agents (adaptive)"}
+    async for event in _gather(lat, lng, city):
+        if "__data__" not in event:
+            yield event
+    yield {"agent": "orchestrator", "msg": "data gathered"}
 
-    # ESCALATION HOOK: the deep council-minutes + 311 scrape (the slowest, most expensive
-    # Browserbase pass) only runs when wave 1 shows this is a real corridor worth an
-    # accountability case — that's the adaptive part the Fetch.ai track is about.
-    reason = _escalation_reason(results)
-    if reason:
-        yield {
-            "agent": "orchestrator",
-            "msg": f"strong signals ({reason}) — escalating to deep council + 311 scrape",
-            "escalated": True,
-        }
-        async for name, value, err in _dispatch_concurrently(calls, ["council_311"]):
-            results[name] = value
-            yield _event(name, value, err)
-    else:
-        results["council_311"] = None
-        yield {"agent": "orchestrator", "msg": "no danger signal — skipping the deep council/311 scrape"}
 
-    yield {"agent": "orchestrator", "msg": "data gathered", "results_keys": list(results)}
-    # The non-SSE path (`gather_community_data`) feeds the gathered data to coordinator.analyze.
+async def gather_data(lat: float, lng: float, city: str | None) -> dict[str, Any]:
+    """Non-streaming gather used by POST /analyze. Cache-first, then agents."""
+    cached = await cache.get_json(keys.scrape_key(lat, lng))
+    if cached is not None:
+        return cached
+    data: dict[str, Any] = {}
+    async for event in _gather(lat, lng, city):
+        if "__data__" in event:
+            data = event["__data__"]
+    return data

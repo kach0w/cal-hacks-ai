@@ -1,7 +1,6 @@
 """An intersection and the imagery fetched for it."""
 from __future__ import annotations
 
-from datetime import date
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -22,7 +21,7 @@ class ImageRef(BaseModel):
     url: str
     width: int = 640
     height: int = 640
-    capture_date: date | None = None
+    capture_date: str | None = None  # Street View gives month precision, e.g. '2024-07'
     resident_submitted: bool = False  # supersedes stale Street View when True
 
 

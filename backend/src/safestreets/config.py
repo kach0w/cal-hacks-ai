@@ -2,12 +2,24 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Resolve .env from the repo root regardless of the process CWD. config.py lives at
+# backend/src/safestreets/config.py, so the repo root is 3 parents up (and backend/ is 2).
+# Without this, running `cd backend && uvicorn ...` would miss the root .env and every
+# API key would silently load empty.
+_HERE = Path(__file__).resolve()
+_ENV_CANDIDATES = (
+    str(_HERE.parents[3] / ".env"),   # <repo>/.env
+    str(_HERE.parents[2] / ".env"),   # <repo>/backend/.env
+    ".env",                            # CWD fallback
+)
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_CANDIDATES, extra="ignore")
 
     # anthropic
     anthropic_api_key: str = ""
@@ -32,6 +44,10 @@ class Settings(BaseSettings):
 
     # fetch.ai
     orchestrator_seed: str = "safestreets-orchestrator-dev-seed-change-me"
+
+    # demo scope — the one knob that pins data collection to a city. Override via
+    # DEMO_CITY in .env to retarget; nothing else hardcodes the city.
+    demo_city: str = "Berkeley"
 
     # app
     backend_host: str = "0.0.0.0"

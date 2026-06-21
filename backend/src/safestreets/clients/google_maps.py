@@ -12,10 +12,78 @@ from safestreets.config import get_settings
 _STATIC = "https://maps.googleapis.com/maps/api/staticmap"
 _SV = "https://maps.googleapis.com/maps/api/streetview"
 _SV_META = "https://maps.googleapis.com/maps/api/streetview/metadata"
+_GEOCODE = "https://maps.googleapis.com/maps/api/geocode/json"
 
 # Approach headings: camera is ON the named leg, looking TOWARD the intersection center.
 # e.g. "north" = camera north of center, facing south (180°).
 _HEADINGS = {"north": 180, "east": 270, "south": 0, "west": 90}
+
+# words to drop so 'University Avenue' -> 'university' (the part that appears in slugs/PDFs)
+_STREET_SUFFIXES = {
+    "ave", "avenue", "st", "street", "blvd", "boulevard", "rd", "road", "way",
+    "dr", "drive", "ln", "lane", "ct", "court", "pl", "place", "ter", "terrace",
+    "hwy", "highway", "pkwy", "parkway", "n", "s", "e", "w", "north", "south", "east", "west",
+}
+
+
+async def nearby_streets(lat: float, lng: float) -> list[str]:
+    """Reverse-geocode to the street names at this point (for news/council matching).
+
+    Returns the distinct 'route' names Google reports nearby, e.g.
+    ['University Avenue', 'Martin Luther King Jr Way'].
+    """
+    key = get_settings().google_maps_api_key
+    if not key:
+        return []
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(_GEOCODE, params={"latlng": f"{lat},{lng}", "key": key})
+        data = resp.json()
+    routes: list[str] = []
+    for result in data.get("results", []):
+        for comp in result.get("address_components", []):
+            if "route" in comp.get("types", []):
+                name = comp.get("long_name")
+                if name and name not in routes:
+                    routes.append(name)
+    return routes
+
+
+async def geocode_address(address: str) -> dict | None:
+    """Forward-geocode a free-text address/intersection to a point.
+
+    For an intersection ('Cedar and San Pablo, Berkeley, CA') this returns the actual
+    corner; for a single street it returns the street's geometric center (imprecise).
+    Returns {lat, lng, formatted, location_type} or None.
+    """
+    key = get_settings().google_maps_api_key
+    if not key:
+        return None
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(_GEOCODE, params={"address": address, "key": key})
+        data = resp.json()
+    if data.get("status") != "OK" or not data.get("results"):
+        return None
+    top = data["results"][0]
+    loc = top["geometry"]["location"]
+    return {
+        "lat": loc["lat"],
+        "lng": loc["lng"],
+        "formatted": top.get("formatted_address"),
+        "location_type": top["geometry"].get("location_type"),
+    }
+
+
+def street_terms(streets: list[str]) -> list[str]:
+    """Tokenize street names into lowercase keywords usable for slug/PDF matching.
+
+    'Martin Luther King Jr Way' -> ['martin', 'luther', 'king', 'jr'] (drops 'way').
+    """
+    terms: list[str] = []
+    for s in streets:
+        for tok in s.lower().replace(".", "").split():
+            if tok not in _STREET_SUFFIXES and len(tok) > 2 and tok not in terms:
+                terms.append(tok)
+    return terms
 
 
 def satellite_url(lat: float, lng: float, zoom: int = 19, size: int = 640) -> str:
