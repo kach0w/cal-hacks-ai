@@ -199,6 +199,29 @@ export const Heart = (p: IconProps) => (
   </Base>
 );
 
+export const Reddit = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="13" r="8.5" />
+    <circle cx="8.5" cy="12.5" r="1" fill="currentColor" />
+    <circle cx="15.5" cy="12.5" r="1" fill="currentColor" />
+    <path d="M9 16c.9.7 1.9 1 3 1s2.1-.3 3-1" />
+    <path d="M12 4.5 13 8" />
+    <circle cx="13.2" cy="4" r="1.1" />
+  </Base>
+);
+
+export const ArrowUp = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </Base>
+);
+
+export const MessageSquare = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </Base>
+);
+
 export const Mail = (p: IconProps) => (
   <Base {...p}>
     <rect x="2" y="4" width="20" height="16" rx="2" />

@@ -10,7 +10,7 @@ from typing import Any
 
 from safestreets.intervention import funding_match, matcher
 from safestreets.lastmile import accountability, coalition
-from safestreets.lastmile.ask import build_lastmile
+from safestreets.lastmile.ask import build_council_report, build_reddit_post, build_social_post
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
 from safestreets.vision import stage1_blind, stage2_corroborate
@@ -63,7 +63,21 @@ async def analyze(
         coalition_count=await coalition.count(intersection.id),
     )
 
-    # Fetch satellite image server-side (API key is restricted to server)
+    # Stage 4: last-mile packet (non-fatal)
+    try:
+        result.social_post = await build_social_post(findings, intersection, community_data)
+        result.council_report = await build_council_report(findings, intersection, community_data)
+    except Exception:
+        pass
+
+    # Reddit post for the street's local subreddit (independently non-fatal: a failure here
+    # shouldn't drop the tweet / council letter built above).
+    try:
+        result.reddit_post = await build_reddit_post(findings, intersection, community_data)
+    except Exception:
+        pass
+
+    # Annotated satellite overlay (non-fatal)
     sat = intersection.satellite()
     if sat:
         try:

@@ -10,6 +10,12 @@ from safestreets.models.finding import Finding
 from safestreets.models.intersection import Intersection
 
 
+class RedditPost(BaseModel):
+    subreddit: str          # bare name, e.g. 'berkeley' (UI renders 'r/berkeley')
+    title: str
+    body: str
+
+
 class ResidentSubmission(BaseModel):
     lat: float
     lng: float
@@ -27,5 +33,6 @@ class AnalysisResult(BaseModel):
     annotated_image_url: str | None = None
     renders: list[dict] = Field(default_factory=list)   # per-finding before/after data URIs
     social_post: str | None = None
+    reddit_post: RedditPost | None = None
     council_report: str | None = None
     generated_at: datetime = Field(default_factory=datetime.utcnow)

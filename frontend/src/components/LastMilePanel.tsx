@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useIntersection } from "../hooks/useIntersection";
-import { Megaphone, FileText, Copy, Printer, Retweet, Heart, Mail } from "./icons";
+import { composeCouncilEmail } from "../api/client";
+import type { CouncilEmailDraft } from "../types";
+import type { RedditPost } from "../types";
+import { Megaphone, FileText, Copy, Printer, ChevronDown, ChevronUp, Retweet, Heart, Mail, Paperclip, Download, Reddit, ArrowUp, MessageSquare } from "./icons";
 
 export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }) {
   const { result, loading } = useIntersection(lat, lng);
@@ -36,6 +39,22 @@ export default function LastMilePanel({ lat, lng }: { lat: number; lng: number }
 
           {result.social_post ? (
             <TweetCard text={result.social_post} />
+          ) : (
+            <div className="flex items-center justify-center" style={{ border: "2px dashed #2c3060", height: 300, fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#6070a0" }}>
+              GENERATING…
+            </div>
+          )}
+
+          {/* Reddit post — posts to the street's local subreddit */}
+          <div className="mt-5 mb-3 flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center" style={{ background: "#ffe2d4", border: "2px solid #b03000" }}>
+              <Reddit className="h-3.5 w-3.5" style={{ color: "#ff4500" }} />
+            </span>
+            <h3 style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#1a1f3d" }}>REDDIT</h3>
+          </div>
+
+          {result.reddit_post ? (
+            <RedditCard post={result.reddit_post} />
           ) : (
             <div className="flex items-center justify-center" style={{ border: "2px dashed #2c3060", height: 300, fontFamily: '"Press Start 2P", monospace', fontSize: 8, color: "#6070a0" }}>
               GENERATING…
@@ -196,6 +215,87 @@ function TweetCard({ text }: { text: string }) {
         </button>
         <button
           onClick={handleShare}
+          className="btn-primary"
+          style={{ marginLeft: "auto", fontSize: 7, padding: "5px 10px" }}
+        >
+          POST →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Reddit card for the street's local subreddit. The subreddit is resolved on the backend
+ * from the intersection's city, and the title/body are written by the agent to read like a
+ * real concerned neighbor's post (not AI). POST opens Reddit's submit page prefilled.
+ */
+function RedditCard({ post }: { post: RedditPost }) {
+  const [upvoted, setUpvoted] = useState(false);
+  const [score, setScore] = useState(128);
+
+  function handleUpvote() {
+    setUpvoted(!upvoted);
+    setScore(c => (upvoted ? c - 1 : c + 1));
+  }
+  function handlePost() {
+    const url = `https://www.reddit.com/r/${post.subreddit}/submit?title=${encodeURIComponent(post.title)}&text=${encodeURIComponent(post.body)}`;
+    window.open(url, "_blank");
+  }
+  function handleCopy() {
+    navigator.clipboard.writeText(`${post.title}\n\n${post.body}`);
+  }
+
+  return (
+    <div style={{ border: "3px solid #2c3060", background: "#e8e4d4", height: 300, display: "flex", flexDirection: "column" }}>
+      {/* Reddit header */}
+      <div style={{ padding: "12px 14px 8px", borderBottom: "2px solid #2c3060", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, background: "#ff4500", border: "2px solid #2c3060", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Reddit className="h-5 w-5" style={{ color: "#fff" }} />
+        </div>
+        <div>
+          <div style={{ fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#1a1f3d" }}>r/{post.subreddit}</div>
+          <div style={{ fontFamily: '"VT323", monospace', fontSize: 15, color: "#6070a0" }}>Posted by u/safestreets_ai</div>
+        </div>
+        <div style={{ marginLeft: "auto", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#ff4500", background: "#ffe2d4", border: "2px solid #ff4500", padding: "3px 8px" }}>
+          ⤴
+        </div>
+      </div>
+
+      {/* Reddit body */}
+      <div style={{ flex: 1, padding: "12px 14px", overflowY: "auto" }}>
+        <div style={{ fontFamily: '"VT323", monospace', fontSize: 22, fontWeight: "bold", color: "#1a1f3d", lineHeight: 1.2, marginBottom: 8 }}>
+          {post.title}
+        </div>
+        <div style={{ fontFamily: '"VT323", monospace', fontSize: 18, color: "#1a1f3d", lineHeight: 1.4, whiteSpace: "pre-wrap" }}>
+          {post.body}
+        </div>
+      </div>
+
+      {/* Reddit actions */}
+      <div style={{ borderTop: "2px solid #2c3060", padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+        <button
+          onClick={handleUpvote}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: upvoted ? "#ff4500" : "#6070a0", padding: "4px 6px" }}
+        >
+          <ArrowUp className="h-3 w-3" />
+          {score}
+        </button>
+        <button
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "default", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", padding: "4px 6px" }}
+        >
+          <MessageSquare className="h-3 w-3" />
+          24
+        </button>
+        <button
+          onClick={handleCopy}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", fontFamily: '"Press Start 2P", monospace', fontSize: 7, color: "#6070a0", padding: "4px 6px" }}
+        >
+          <Copy className="h-3 w-3" />
+          COPY
+        </button>
+        <button
+          onClick={handlePost}
           className="btn-primary"
           style={{ marginLeft: "auto", fontSize: 7, padding: "5px 10px" }}
         >

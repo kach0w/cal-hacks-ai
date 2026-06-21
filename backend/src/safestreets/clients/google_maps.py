@@ -56,6 +56,27 @@ async def reverse_geocode(lat: float, lng: float) -> dict:
     return {"streets": routes, "city": city, "state": state}
 
 
+async def reverse_city(lat: float, lng: float) -> str | None:
+    """Reverse-geocode to the city/locality name at this point (e.g. 'Berkeley').
+
+    Used to pick the right local subreddit. Falls through several component types because
+    not every place publishes a plain 'locality' (unincorporated areas, big metros).
+    """
+    key = get_settings().google_maps_api_key
+    if not key:
+        return None
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(_GEOCODE, params={"latlng": f"{lat},{lng}", "key": key})
+        data = resp.json()
+    results = data.get("results", [])
+    for ctype in ("locality", "postal_town", "administrative_area_level_3", "sublocality"):
+        for result in results:
+            for comp in result.get("address_components", []):
+                if ctype in comp.get("types", []):
+                    return comp.get("long_name")
+    return None
+
+
 async def geocode_address(address: str) -> dict | None:
     """Forward-geocode a free-text address/intersection to a point.
 
