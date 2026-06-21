@@ -43,7 +43,8 @@ async def build_social_post(
     settings = get_settings()
 
     prompt = f"""Write a short, urgent social media post (Twitter/Instagram length, under 280 characters if possible, max 400)
-advocating for safety fixes at this intersection. Make it human, specific, and actionable — not generic.
+advocating for safety fixes at this intersection. Make it human, specific, and actionable. However do not make it violent, accusatory,
+or aggresive. The tone should be concerned and urgent, but also hopeful and solution-oriented. Include at most 2 relevant hashtags at the end.
 
 Intersection: {intersection.address}
 Crash record: {_crash_summary(community_data)}
@@ -83,7 +84,7 @@ async def build_council_report(
     from datetime import date
     today = date.today().strftime("%B %d, %Y")
 
-    prompt = f"""Write a formal letter to submit to a city council transportation committee requesting pedestrian safety improvements. Format it exactly as a real letter — no markdown, no headers with pound signs, no bullet asterisks. Use plain prose paragraphs with blank lines between them.
+    prompt = f"""Write a formal letter to submit to a city council transportation committee requesting pedestrian safety improvements. Format it exactly as a real letter — no markdown, no headers with pound signs, no bullet asterisks. Use plain prose paragraphs with blank lines between them. Do not use violent language or accusatory language. The tone should be professional, concerned, and solution-oriented.
 
 The letter structure should be:
 - Date line: {today}
