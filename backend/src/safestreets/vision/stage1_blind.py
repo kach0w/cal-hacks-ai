@@ -20,16 +20,27 @@ from safestreets.models.intersection import Intersection
 _PROMPT = (Path(__file__).parent / "prompts" / "stage1_blind.txt").read_text()
 
 
-async def _encode_image(url: str) -> dict:
-    """Fetch an image URL and return an Anthropic image content block."""
+async def _encode_image(url: str, max_px: int = 512) -> dict:
+    """Fetch, resize to max_px on the long edge, and return an Anthropic image block."""
+    from io import BytesIO
+    from PIL import Image as PILImage
+
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(url)
         resp.raise_for_status()
-        media_type = resp.headers.get("content-type", "image/jpeg").split(";")[0]
-        data = base64.standard_b64encode(resp.content).decode()
+
+    img = PILImage.open(BytesIO(resp.content)).convert("RGB")
+    w, h = img.size
+    if max(w, h) > max_px:
+        scale = max_px / max(w, h)
+        img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
+
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=80)
+    data = base64.standard_b64encode(buf.getvalue()).decode()
     return {
         "type": "image",
-        "source": {"type": "base64", "media_type": media_type, "data": data},
+        "source": {"type": "base64", "media_type": "image/jpeg", "data": data},
     }
 
 

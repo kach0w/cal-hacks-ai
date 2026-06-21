@@ -3,7 +3,8 @@ last-mile -> render. This is the function both the HTTP API and the uAgent call.
 """
 from __future__ import annotations
 
-import base64
+import asyncio
+import logging
 from typing import Any
 
 from safestreets.intervention import funding_match, matcher
@@ -11,16 +12,39 @@ from safestreets.lastmile import accountability, coalition
 from safestreets.lastmile.ask import build_lastmile
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
-from safestreets.render import annotate
-from safestreets.render.concept import generate as render_concept
 from safestreets.vision import stage1_blind, stage2_corroborate
 
+log = logging.getLogger(__name__)
 
-async def analyze(intersection: Intersection, community_data: dict[str, Any]) -> AnalysisResult:
-    # Stage 1: blind (imagery only)
+
+async def _render_and_persist(
+    intersection: Intersection,
+    findings: list,
+    vision_key: str,
+    cached_payload: dict,
+) -> None:
+    """Background task: generate Gemini before/after renders and patch the cached result."""
+    try:
+        from safestreets.render.concept import generate as render_concept
+        from safestreets.store import cache
+
+        renders = await render_concept(intersection, findings)
+        cached_payload["renders"] = renders
+        await cache.set_json(vision_key, cached_payload, ttl=86400)
+        log.info("Concept renders complete for %s", intersection.id)
+    except Exception:
+        log.exception("Background render failed for %s", intersection.id)
+
+
+async def analyze(
+    intersection: Intersection,
+    community_data: dict[str, Any],
+    vision_key: str | None = None,
+) -> AnalysisResult:
+    # Stage 1: blind vision pass (street view only, images resized to 512px)
     conditions = await stage1_blind.run_blind_pass(intersection)
 
-    # Stage 2: independent corroboration
+    # Stage 2: independent corroboration against crash/311/news/council data
     findings = await stage2_corroborate.corroborate(conditions, community_data)
 
     # Stage 3: attach interventions
@@ -36,25 +60,15 @@ async def analyze(intersection: Intersection, community_data: dict[str, Any]) ->
         coalition_count=await coalition.count(intersection.id),
     )
 
-    # Stage 4: last-mile packet — single call for both outputs (non-fatal)
+    # Stage 4: social post + council letter (single Claude call)
     try:
         result.social_post, result.council_report = await build_lastmile(findings, intersection, community_data)
     except Exception:
-        pass
+        log.exception("Last-mile generation failed")
 
-    # Annotated satellite overlay (non-fatal)
-    sat = intersection.satellite()
-    if sat:
-        try:
-            png = await annotate.annotate_satellite(sat.url, findings)
-            result.annotated_image_url = "data:image/png;base64," + base64.b64encode(png).decode()
-        except Exception:
-            pass
-
-    # Stage 5: per-finding Gemini before/after renders (non-fatal)
-    try:
-        result.renders = await render_concept(intersection, findings)
-    except Exception:
-        pass
+    # Stage 5: Gemini concept renders — fire and forget, patch cache when done
+    if vision_key:
+        payload = result.model_dump(mode="json")
+        asyncio.create_task(_render_and_persist(intersection, findings, vision_key, payload))
 
     return result

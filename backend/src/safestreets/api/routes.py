@@ -77,9 +77,10 @@ async def analyze(req: AnalyzeRequest):
         city=req.city,
         images=[ImageRef(**img) for img in data.get("images", [])],
     )
-    result = await coordinator.analyze(intersection, data)
+    vkey = keys.vision_key(req.lat, req.lng)
+    result = await coordinator.analyze(intersection, data, vision_key=vkey)
     payload = result.model_dump(mode="json")
-    await cache.set_json(keys.vision_key(req.lat, req.lng), payload, ttl=keys.VISION_TTL)
+    await cache.set_json(vkey, payload, ttl=keys.VISION_TTL)
     return payload
 
 
