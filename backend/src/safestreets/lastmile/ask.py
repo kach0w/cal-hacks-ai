@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from safestreets.clients.anthropic_client import get_anthropic
+from safestreets.clients.anthropic_client import get_anthropic, call_with_backoff
 from safestreets.config import get_settings
 from safestreets.models.finding import Finding, FindingStatus
 from safestreets.models.intersection import Intersection
@@ -59,11 +59,11 @@ Rules:
 - No hashtag spam — at most 2 relevant hashtags
 - No AI-sounding language"""
 
-    resp = await client.messages.create(
+    resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_text_model,
         max_tokens=300,
         messages=[{"role": "user", "content": prompt}],
-    )
+    ))
     return "".join(b.text for b in resp.content if b.type == "text").strip()
 
 
@@ -106,9 +106,9 @@ Findings:
 
 Write only the letter text. No markdown formatting whatsoever. No asterisks, no pound signs, no dashes as bullets. Plain text letter."""
 
-    resp = await client.messages.create(
+    resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_text_model,
         max_tokens=1200,
         messages=[{"role": "user", "content": prompt}],
-    )
+    ))
     return "".join(b.text for b in resp.content if b.type == "text").strip()

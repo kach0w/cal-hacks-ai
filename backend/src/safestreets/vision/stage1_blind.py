@@ -12,7 +12,7 @@ from pathlib import Path
 
 import httpx
 
-from safestreets.clients.anthropic_client import get_anthropic
+from safestreets.clients.anthropic_client import get_anthropic, call_with_backoff
 from safestreets.config import get_settings
 from safestreets.models.condition import Confidence, NamedZone, ObservedCondition
 from safestreets.models.intersection import Intersection
@@ -69,10 +69,10 @@ async def run_blind_pass(intersection: Intersection) -> list[ObservedCondition]:
         content.append({"type": "text", "text": f"[{img.direction.value}{date_note}]"})
         content.append(enc)
 
-    resp = await client.messages.create(
+    resp = await call_with_backoff(lambda: client.messages.create(
         model=settings.claude_vision_model,
         max_tokens=1024,
         messages=[{"role": "user", "content": content}],
-    )
+    ))
     text = "".join(b.text for b in resp.content if b.type == "text")
     return _parse(text)
