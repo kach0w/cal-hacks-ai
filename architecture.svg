@@ -1,0 +1,253 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 820" width="1100" height="820" style="font-family: monospace;">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-strong">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="820" fill="#0d1128"/>
+
+  <!-- Scanline effect -->
+  <rect width="1100" height="820" fill="url(#scanlines)" opacity="0.03"/>
+
+  <!-- Grid dots -->
+  <pattern id="grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+    <circle cx="1" cy="1" r="0.8" fill="#2c3060" opacity="0.6"/>
+  </pattern>
+  <rect width="1100" height="820" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <text x="550" y="38" text-anchor="middle" fill="#e8c000" font-size="13" font-weight="bold" letter-spacing="4" filter="url(#glow)">SAFESTREETS · SYSTEM ARCHITECTURE</text>
+  <line x1="200" y1="48" x2="900" y2="48" stroke="#2c3060" stroke-width="1"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- ROW 1: USER INPUT -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="400" y="62" width="300" height="54" rx="0" fill="#1a1f3d" stroke="#e8c000" stroke-width="2"/>
+  <rect x="400" y="62" width="300" height="16" fill="#e8c000"/>
+  <text x="550" y="74" text-anchor="middle" fill="#0d1128" font-size="8" font-weight="bold" letter-spacing="2">USER INPUT</text>
+  <text x="550" y="95" text-anchor="middle" fill="#e8c000" font-size="10" letter-spacing="1">▶ MAP CLICK · INTERSECTION PIN</text>
+  <text x="550" y="109" text-anchor="middle" fill="#6070a0" font-size="8">lat / lng coordinates</text>
+
+  <!-- Arrow down -->
+  <line x1="550" y1="116" x2="550" y2="138" stroke="#e8c000" stroke-width="2"/>
+  <polygon points="550,144 544,132 556,132" fill="#e8c000"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- ROW 2: ORCHESTRATOR -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="340" y="144" width="420" height="44" rx="0" fill="#1a1f3d" stroke="#3060c8" stroke-width="2"/>
+  <rect x="340" y="144" width="420" height="14" fill="#3060c8"/>
+  <text x="550" y="154" text-anchor="middle" fill="#f0ece0" font-size="8" font-weight="bold" letter-spacing="2">ORCHESTRATOR</text>
+  <text x="550" y="172" text-anchor="middle" fill="#88aaff" font-size="9" letter-spacing="1">adaptive dispatch · concurrent execution · retry / backoff</text>
+  <text x="550" y="183" text-anchor="middle" fill="#6070a0" font-size="7.5">FastAPI + asyncio.gather · SSE live agent feed</text>
+
+  <!-- Fan out arrows -->
+  <line x1="550" y1="188" x2="550" y2="200" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="550" y1="200" x2="120" y2="200" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="550" y1="200" x2="362" y2="200" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="550" y1="200" x2="737" y2="200" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="550" y1="200" x2="980" y2="200" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="120" y1="200" x2="120" y2="212" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="362" y1="200" x2="362" y2="212" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="737" y1="200" x2="737" y2="212" stroke="#3060c8" stroke-width="1.5"/>
+  <line x1="980" y1="200" x2="980" y2="212" stroke="#3060c8" stroke-width="1.5"/>
+  <polygon points="120,218 114,206 126,206" fill="#3060c8"/>
+  <polygon points="362,218 356,206 368,206" fill="#3060c8"/>
+  <polygon points="737,218 731,206 743,206" fill="#3060c8"/>
+  <polygon points="980,218 974,206 986,206" fill="#3060c8"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- ROW 3: AGENTS (parallel) -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <!-- Agent 1: Crash Data -->
+  <rect x="30" y="218" width="180" height="82" rx="0" fill="#0d1128" stroke="#e84040" stroke-width="2"/>
+  <rect x="30" y="218" width="180" height="14" fill="#e84040"/>
+  <text x="120" y="228" text-anchor="middle" fill="#f0ece0" font-size="7" font-weight="bold" letter-spacing="1.5">CRASH DATA AGENT</text>
+  <text x="120" y="248" text-anchor="middle" fill="#e84040" font-size="18">⚠</text>
+  <text x="120" y="267" text-anchor="middle" fill="#aaa" font-size="8">CCRS · Socrata API</text>
+  <text x="120" y="279" text-anchor="middle" fill="#6070a0" font-size="7.5">5,024 Alameda County</text>
+  <text x="120" y="291" text-anchor="middle" fill="#6070a0" font-size="7.5">intersections indexed</text>
+
+  <!-- Agent 2: 311 -->
+  <rect x="272" y="218" width="180" height="82" rx="0" fill="#0d1128" stroke="#e8a000" stroke-width="2"/>
+  <rect x="272" y="218" width="180" height="14" fill="#e8a000"/>
+  <text x="362" y="228" text-anchor="middle" fill="#0d1128" font-size="7" font-weight="bold" letter-spacing="1.5">311 COMPLAINTS AGENT</text>
+  <text x="362" y="248" text-anchor="middle" fill="#e8a000" font-size="18">📋</text>
+  <text x="362" y="267" text-anchor="middle" fill="#aaa" font-size="8">Browserbase · headless</text>
+  <text x="362" y="279" text-anchor="middle" fill="#6070a0" font-size="7.5">JS-rendered city portals</text>
+  <text x="362" y="291" text-anchor="middle" fill="#6070a0" font-size="7.5">+ council PDFs</text>
+
+  <!-- Agent 3: News -->
+  <rect x="647" y="218" width="180" height="82" rx="0" fill="#0d1128" stroke="#e8a000" stroke-width="2"/>
+  <rect x="647" y="218" width="180" height="14" fill="#e8a000"/>
+  <text x="737" y="228" text-anchor="middle" fill="#0d1128" font-size="7" font-weight="bold" letter-spacing="1.5">NEWS AGENT</text>
+  <text x="737" y="248" text-anchor="middle" fill="#e8a000" font-size="18">📰</text>
+  <text x="737" y="267" text-anchor="middle" fill="#aaa" font-size="8">Browserbase · headless</text>
+  <text x="737" y="279" text-anchor="middle" fill="#6070a0" font-size="7.5">local news scrape</text>
+  <text x="737" y="291" text-anchor="middle" fill="#6070a0" font-size="7.5">Berkeley Scanner + more</text>
+
+  <!-- Agent 4: Images -->
+  <rect x="889" y="218" width="180" height="82" rx="0" fill="#0d1128" stroke="#3060c8" stroke-width="2"/>
+  <rect x="889" y="218" width="180" height="14" fill="#3060c8"/>
+  <text x="979" y="228" text-anchor="middle" fill="#f0ece0" font-size="7" font-weight="bold" letter-spacing="1.5">IMAGE FETCHER</text>
+  <text x="979" y="248" text-anchor="middle" fill="#88aaff" font-size="18">🛰</text>
+  <text x="979" y="267" text-anchor="middle" fill="#aaa" font-size="8">Google Maps API</text>
+  <text x="979" y="279" text-anchor="middle" fill="#6070a0" font-size="7.5">Satellite + Street View</text>
+  <text x="979" y="291" text-anchor="middle" fill="#6070a0" font-size="7.5">N / S / E / W + date</text>
+
+  <!-- Converge arrows -->
+  <line x1="120" y1="300" x2="120" y2="322" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="362" y1="300" x2="362" y2="322" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="737" y1="300" x2="737" y2="322" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="979" y1="300" x2="979" y2="322" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="120" y1="322" x2="979" y2="322" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="550" y1="322" x2="550" y2="334" stroke="#6070a0" stroke-width="1.5"/>
+  <polygon points="550,340 544,328 556,328" fill="#6070a0"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- REDIS CACHE BAR -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="200" y="340" width="700" height="38" rx="0" fill="#0d1128" stroke="#38a832" stroke-width="2"/>
+  <rect x="200" y="340" width="12" height="38" fill="#38a832"/>
+  <text x="560" y="354" text-anchor="middle" fill="#38a832" font-size="8" font-weight="bold" letter-spacing="2">REDIS CACHE</text>
+  <text x="560" y="369" text-anchor="middle" fill="#6070a0" font-size="8">ss:scrape:{lat}:{lng} · 24h TTL · only written when agents return real data</text>
+
+  <!-- Arrow down -->
+  <line x1="550" y1="378" x2="550" y2="398" stroke="#e8c000" stroke-width="2"/>
+  <polygon points="550,404 544,392 556,392" fill="#e8c000"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- STAGE 1 -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="160" y="404" width="780" height="66" rx="0" fill="#1a1f3d" stroke="#e8c000" stroke-width="2.5"/>
+  <rect x="160" y="404" width="780" height="16" fill="#e8c000"/>
+  <text x="550" y="416" text-anchor="middle" fill="#0d1128" font-size="8" font-weight="bold" letter-spacing="3">STAGE 1 · BLIND VISION PASS</text>
+
+  <!-- Firewall badge -->
+  <rect x="164" y="424" width="88" height="40" rx="0" fill="#e84040" opacity="0.15" stroke="#e84040" stroke-width="1"/>
+  <text x="208" y="437" text-anchor="middle" fill="#e84040" font-size="7" font-weight="bold">🔒 FIREWALL</text>
+  <text x="208" y="448" text-anchor="middle" fill="#e84040" font-size="6.5">no community</text>
+  <text x="208" y="458" text-anchor="middle" fill="#e84040" font-size="6.5">data visible</text>
+
+  <text x="430" y="432" text-anchor="middle" fill="#f0ece0" font-size="9">Claude Haiku</text>
+  <text x="430" y="446" text-anchor="middle" fill="#aaa" font-size="8">satellite + Street View only</text>
+  <text x="430" y="458" text-anchor="middle" fill="#6070a0" font-size="7.5">images resized → 512px to minimize cost</text>
+
+  <text x="720" y="432" text-anchor="middle" fill="#f0ece0" font-size="9">Output</text>
+  <text x="720" y="446" text-anchor="middle" fill="#aaa" font-size="8">ObservedCondition per named zone</text>
+  <text x="720" y="458" text-anchor="middle" fill="#6070a0" font-size="7.5">NW / NE / SW / SE / N_LEG / CENTER …</text>
+
+  <!-- Arrow down -->
+  <line x1="550" y1="470" x2="550" y2="490" stroke="#38a832" stroke-width="2"/>
+  <polygon points="550,496 544,484 556,484" fill="#38a832"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- STAGE 2 -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="160" y="496" width="780" height="66" rx="0" fill="#1a1f3d" stroke="#38a832" stroke-width="2.5"/>
+  <rect x="160" y="496" width="780" height="16" fill="#38a832"/>
+  <text x="550" y="508" text-anchor="middle" fill="#0d1128" font-size="8" font-weight="bold" letter-spacing="3">STAGE 2 · INDEPENDENT CORROBORATION</text>
+
+  <text x="350" y="524" text-anchor="middle" fill="#f0ece0" font-size="9">Claude Haiku</text>
+  <text x="350" y="538" text-anchor="middle" fill="#aaa" font-size="8">matches Stage 1 findings against</text>
+  <text x="350" y="550" text-anchor="middle" fill="#6070a0" font-size="7.5">crash records · 311 · news · council</text>
+
+  <!-- Status badges -->
+  <rect x="530" y="520" width="80" height="16" fill="#38a832" opacity="0.2" stroke="#38a832" stroke-width="1"/>
+  <text x="570" y="531" text-anchor="middle" fill="#38a832" font-size="7.5" font-weight="bold">CONFIRMED</text>
+  <rect x="622" y="520" width="76" height="16" fill="#e8c000" opacity="0.2" stroke="#e8c000" stroke-width="1"/>
+  <text x="660" y="531" text-anchor="middle" fill="#e8c000" font-size="7.5" font-weight="bold">CANDIDATE</text>
+  <rect x="710" y="520" width="68" height="16" fill="#e84040" opacity="0.2" stroke="#e84040" stroke-width="1"/>
+  <text x="744" y="531" text-anchor="middle" fill="#e84040" font-size="7.5" font-weight="bold">REPORTED</text>
+
+  <text x="660" y="550" text-anchor="middle" fill="#6070a0" font-size="7.5">two-signal credibility — "seen" ≠ "reported"</text>
+
+  <!-- Arrow down -->
+  <line x1="550" y1="562" x2="550" y2="582" stroke="#3060c8" stroke-width="2"/>
+  <polygon points="550,588 544,576 556,576" fill="#3060c8"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- STAGE 3 -->
+  <!-- ═══════════════════════════════════════ -->
+  <rect x="160" y="588" width="780" height="52" rx="0" fill="#1a1f3d" stroke="#3060c8" stroke-width="2"/>
+  <rect x="160" y="588" width="780" height="14" fill="#3060c8"/>
+  <text x="550" y="598" text-anchor="middle" fill="#f0ece0" font-size="8" font-weight="bold" letter-spacing="3">STAGE 3 · INTERVENTION + FUNDING MATCH</text>
+  <text x="360" y="616" text-anchor="middle" fill="#aaa" font-size="8">condition → costed fix (library match)</text>
+  <text x="360" y="629" text-anchor="middle" fill="#6070a0" font-size="7.5">crosswalk · signal · curb extension · bulb-out …</text>
+  <text x="720" y="616" text-anchor="middle" fill="#38a832" font-size="8">SS4A · HSIP · state grants</text>
+  <text x="720" y="629" text-anchor="middle" fill="#6070a0" font-size="7.5">matched per intervention key</text>
+
+  <!-- Fan out arrows for last mile -->
+  <line x1="550" y1="640" x2="550" y2="654" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="550" y1="654" x2="260" y2="654" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="550" y1="654" x2="840" y2="654" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="260" y1="654" x2="260" y2="666" stroke="#6070a0" stroke-width="1.5"/>
+  <line x1="840" y1="654" x2="840" y2="666" stroke="#6070a0" stroke-width="1.5"/>
+  <polygon points="260,672 254,660 266,660" fill="#6070a0"/>
+  <polygon points="840,672 834,660 846,660" fill="#6070a0"/>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- STAGE 4 + 5 side by side -->
+  <!-- ═══════════════════════════════════════ -->
+
+  <!-- Stage 4: Last Mile -->
+  <rect x="50" y="672" width="420" height="80" rx="0" fill="#1a1f3d" stroke="#e8c000" stroke-width="2"/>
+  <rect x="50" y="672" width="420" height="14" fill="#e8c000"/>
+  <text x="260" y="682" text-anchor="middle" fill="#0d1128" font-size="8" font-weight="bold" letter-spacing="2">STAGE 4 · LAST MILE</text>
+  <text x="260" y="700" text-anchor="middle" fill="#aaa" font-size="8.5">Single Claude call → JSON response</text>
+
+  <rect x="64" y="706" width="90" height="36" rx="0" fill="#daeeff" stroke="#3060c8" stroke-width="1.5"/>
+  <text x="109" y="718" text-anchor="middle" fill="#3060c8" font-size="7.5" font-weight="bold">𝕏 TWEET</text>
+  <text x="109" y="730" text-anchor="middle" fill="#3060c8" font-size="7">≤280 chars</text>
+  <text x="109" y="741" text-anchor="middle" fill="#3060c8" font-size="7">ready to post</text>
+
+  <rect x="174" y="706" width="110" height="36" rx="0" fill="#fff8d0" stroke="#b89000" stroke-width="1.5"/>
+  <text x="229" y="718" text-anchor="middle" fill="#b89000" font-size="7.5" font-weight="bold">COUNCIL LETTER</text>
+  <text x="229" y="730" text-anchor="middle" fill="#b89000" font-size="7">formal + costed</text>
+  <text x="229" y="741" text-anchor="middle" fill="#b89000" font-size="7">mailto / PDF</text>
+
+  <rect x="294" y="706" width="90" height="36" rx="0" fill="#1a1f3d" stroke="#38a832" stroke-width="1.5"/>
+  <text x="339" y="718" text-anchor="middle" fill="#38a832" font-size="7.5" font-weight="bold">ACCOUNTABILITY</text>
+  <text x="339" y="730" text-anchor="middle" fill="#38a832" font-size="7">durable record</text>
+  <text x="339" y="741" text-anchor="middle" fill="#38a832" font-size="7">city response log</text>
+
+  <rect x="394" y="706" width="70" height="36" rx="0" fill="#1a1f3d" stroke="#e84040" stroke-width="1.5"/>
+  <text x="429" y="718" text-anchor="middle" fill="#e84040" font-size="7.5" font-weight="bold">REDDIT</text>
+  <text x="429" y="730" text-anchor="middle" fill="#e84040" font-size="7">r/city post</text>
+  <text x="429" y="741" text-anchor="middle" fill="#e84040" font-size="7">neighbor voice</text>
+
+  <!-- Stage 5: Concept Renders -->
+  <rect x="630" y="672" width="420" height="80" rx="0" fill="#1a1f3d" stroke="#a050ff" stroke-width="2"/>
+  <rect x="630" y="672" width="420" height="14" fill="#a050ff"/>
+  <text x="840" y="682" text-anchor="middle" fill="#f0ece0" font-size="8" font-weight="bold" letter-spacing="2">STAGE 5 · CONCEPT RENDERS  (background)</text>
+  <text x="840" y="700" text-anchor="middle" fill="#aaa" font-size="8.5">Gemini Flash image editing · asyncio.create_task</text>
+
+  <rect x="644" y="706" width="100" height="36" rx="0" fill="#0d1128" stroke="#a050ff" stroke-width="1.5"/>
+  <text x="694" y="718" text-anchor="middle" fill="#c090ff" font-size="7.5" font-weight="bold">BEFORE</text>
+  <text x="694" y="730" text-anchor="middle" fill="#a050ff" font-size="7">real Street View</text>
+  <text x="694" y="741" text-anchor="middle" fill="#a050ff" font-size="7">N / S / E / W</text>
+
+  <text x="770" y="727" text-anchor="middle" fill="#a050ff" font-size="20">→</text>
+
+  <rect x="790" y="706" width="100" height="36" rx="0" fill="#0d1128" stroke="#a050ff" stroke-width="1.5"/>
+  <text x="840" y="718" text-anchor="middle" fill="#c090ff" font-size="7.5" font-weight="bold">AFTER</text>
+  <text x="840" y="730" text-anchor="middle" fill="#a050ff" font-size="7">hazard removed</text>
+  <text x="840" y="741" text-anchor="middle" fill="#a050ff" font-size="7">same camera angle</text>
+
+  <text x="940" y="714" text-anchor="middle" fill="#6070a0" font-size="7.5">patches Redis</text>
+  <text x="940" y="726" text-anchor="middle" fill="#6070a0" font-size="7.5">cache when</text>
+  <text x="940" y="738" text-anchor="middle" fill="#6070a0" font-size="7.5">complete</text>
+  <text x="940" y="750" text-anchor="middle" fill="#a050ff" font-size="9">⟳</text>
+
+  <!-- Bottom label -->
+  <line x1="100" y1="800" x2="1000" y2="800" stroke="#2c3060" stroke-width="1"/>
+  <text x="550" y="814" text-anchor="middle" fill="#3a4070" font-size="8" letter-spacing="3">UC BERKELEY AI HACKATHON 3.0  ·  SAFESTREETS</text>
+</svg>
