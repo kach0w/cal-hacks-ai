@@ -27,6 +27,39 @@ Drop a pin on the map. SafeStreets then:
 
 ---
 
+# Architecture
+
+```
+  map click
+      │
+      ▼
+  ┌─────────────────────────────────────────────────┐
+  │  data agents  (run in parallel)                 │
+  │  crash records · 311 complaints · news · images │
+  └───────────────────────┬─────────────────────────┘
+                          │
+                          ▼
+              Stage 1 — blind vision
+              Claude sees images only 🔒
+              spots hazards, names the zone
+                          │
+                          ▼
+              Stage 2 — corroboration
+              now cross-checks community data
+              CONFIRMED · CANDIDATE · REPORTED
+                          │
+                          ▼
+              Stage 3 — intervention
+              costed fix + grant match
+              SS4A / HSIP / state programs
+                          │
+                          ▼
+  ┌───────────────────────┴─────────────────────────┐
+  │  last mile                                      │
+  │  tweet · council letter · before/after render   │
+  └─────────────────────────────────────────────────┘
+```
+
 # How we built it
 
 **Vision (Claude Haiku):** a two-stage pipeline — blind detection, then independent corroboration — with deterministic named-zone → marker placement drawn onto the real satellite image. Built with Claude Code.
