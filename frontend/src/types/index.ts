@@ -62,6 +62,12 @@ export interface ConceptRender {
   label: string;
 }
 
+export interface RedditPost {
+  subreddit: string;   // bare name; UI renders "r/<subreddit>"
+  title: string;
+  body: string;
+}
+
 export interface AnalysisResult {
   intersection: { id: string; address: string; lat: number; lng: number; images: any[] };
   findings: Finding[];
@@ -71,6 +77,7 @@ export interface AnalysisResult {
   concept_image_url: string | null;
   renders: ConceptRender[];
   social_post: string | null;
+  reddit_post: RedditPost | null;
   council_report: string | null;
 }
 

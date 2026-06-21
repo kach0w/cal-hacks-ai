@@ -19,6 +19,7 @@ playwright>=1.60
 
 # imagery
 pillow>=10.3
+google-genai>=1.0     # Gemini image generation (render/concept.py)
 
 # documents
 pypdf>=4.2          # extract text from council-agenda PDFs (accountability log)

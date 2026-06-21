@@ -8,7 +8,7 @@ from typing import Any
 
 from safestreets.intervention import funding_match, matcher
 from safestreets.lastmile import accountability, coalition
-from safestreets.lastmile.ask import build_council_report, build_social_post
+from safestreets.lastmile.ask import build_council_report, build_reddit_post, build_social_post
 from safestreets.models.analysis import AnalysisResult
 from safestreets.models.intersection import Intersection
 from safestreets.render import annotate
@@ -40,6 +40,13 @@ async def analyze(intersection: Intersection, community_data: dict[str, Any]) ->
     try:
         result.social_post = await build_social_post(findings, intersection, community_data)
         result.council_report = await build_council_report(findings, intersection, community_data)
+    except Exception:
+        pass
+
+    # Reddit post for the street's local subreddit (independently non-fatal: a failure here
+    # shouldn't drop the tweet / council letter built above).
+    try:
+        result.reddit_post = await build_reddit_post(findings, intersection, community_data)
     except Exception:
         pass
 
